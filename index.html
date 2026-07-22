@@ -601,9 +601,9 @@ footer{border-top:1px solid var(--line);padding-block:46px;background:var(--bg-2
         <button class="iconbtn adm-close" aria-label="סגירה"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
       </div>
       <form id="loginForm" novalidate>
-        <div class="field"><label>שם משתמש</label><input id="admUser" autocomplete="username" required></div>
+        <div class="field"><label>אימייל</label><input id="admUser" type="email" autocomplete="username" required placeholder="admin@example.com"></div>
         <div class="field"><label>סיסמה</label><input id="admPass" type="password" autocomplete="current-password" required></div>
-        <p class="admin-err" id="loginErr" hidden>שם משתמש או סיסמה שגויים</p>
+        <p class="admin-err" id="loginErr" hidden>אימייל או סיסמה שגויים</p>
         <button type="submit" class="submit">כניסה</button>
       </form>
     </div>
@@ -714,11 +714,9 @@ const DEFAULT_BENEFITS=[
  {n:'ביטוח ישיר (555)',c:'insurance',badge:'pop',tag:'ביטוח רכב ודירה בהנחה (קוד 159)',d:'הנחות על ביטוח רכב וביטוח דירה.',a:[{t:'הצטרפות באתר',h:'https://www.555.co.il/pearl/apps/cooperation-landing-page/homeStep?attentionCode=159'}]},
  {n:'ליברה',c:'insurance',badge:'new',tag:'ביטוח אחריות מקצועית ייעודי',d:'ביטוח אחריות מקצועית מותאם ליועצי משכנתאות.',a:[{t:'הצטרפות באתר',h:'https://libra.activetrail.biz/mortgage_broker_insurance'}]}
 ];
-const LS_BENEFITS='hfca-benefits-data';
-let BENEFITS;
-try{const s=JSON.parse(localStorage.getItem(LS_BENEFITS));BENEFITS=Array.isArray(s)&&s.length?s:DEFAULT_BENEFITS.map(b=>({...b}));}
-catch(e){BENEFITS=DEFAULT_BENEFITS.map(b=>({...b}));}
-const saveBenefits=()=>localStorage.setItem(LS_BENEFITS,JSON.stringify(BENEFITS));
+/* Benefits live in Supabase; DEFAULT_BENEFITS is the bundled fallback + seed source. */
+let BENEFITS=DEFAULT_BENEFITS.map(b=>({...b}));
+let benefitsFromServer=false;
 const TEAM=[{n:'אבי מלכי',r:'יו״ר הוועדה',img:'avi-malki-B-Jdzob7.jpg',chair:1},{n:'שי פרלמן',r:'חבר ועדה',img:'shai-perlman-D2q96NCi.jpg'},{n:'נטליה אומנסקי',r:'חברת ועדה',img:'natalia-omansky-B_NR3TYz.jpg'},{n:'הילה קניג',r:'חברת ועדה',img:'hila-kenig-DG3VLOH7.jpg'},{n:'כרמית סקג׳יו',r:'חברת ועדה',img:'carmit-skajio-Bb2ZJOXO.jpg'},{n:'דורון שטרית',r:'חבר ועדה',img:'doron-shtrit-pFn9O6E5.jpg'}];
 
 /* ===== HELPERS ===== */
@@ -745,7 +743,59 @@ function card(b,i){
 const SB_URL='https://ekpkmqczjplamtadvqgv.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVrcGttcWN6anBsYW10YWR2cWd2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwMzM2MjksImV4cCI6MjA5NjYwOTYyOX0.D2I5PE-Zl6b_mOIsRfwVo7C8qsLeen1Fbk4-62hpDJM';
 const sbHeaders=()=>({'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json'});
-const benefitKey=b=>String((b&&b.n)||'').trim();
+const benefitKey=b=>String((b&&(b.id||b.n))||'').trim();
+
+/* ----- Supabase Auth (admin login via GoTrue REST) ----- */
+const SB_AUTH=SB_URL+'/auth/v1';
+const LS_SESSION='hfca-admin-session';
+let sbSession=null;try{sbSession=JSON.parse(localStorage.getItem(LS_SESSION)||'null');}catch(e){}
+const adminEmail=()=>(sbSession&&sbSession.user&&sbSession.user.email)||'admin';
+function saveSession(s){sbSession=s;try{localStorage.setItem(LS_SESSION,JSON.stringify(s));}catch(e){}}
+function clearSession(){sbSession=null;try{localStorage.removeItem(LS_SESSION);}catch(e){}}
+function isLoggedIn(){return !!(sbSession&&sbSession.access_token);}
+async function sbLogin(email,password){
+  const r=await fetch(SB_AUTH+'/token?grant_type=password',{method:'POST',
+    headers:{'apikey':SB_KEY,'Content-Type':'application/json'},body:JSON.stringify({email,password})});
+  if(!r.ok)throw new Error('login');saveSession(await r.json());return true;}
+async function sbRefresh(){
+  if(!sbSession||!sbSession.refresh_token)return false;
+  try{const r=await fetch(SB_AUTH+'/token?grant_type=refresh_token',{method:'POST',
+    headers:{'apikey':SB_KEY,'Content-Type':'application/json'},body:JSON.stringify({refresh_token:sbSession.refresh_token})});
+    if(!r.ok){clearSession();return false;}saveSession(await r.json());return true;}catch(e){return false;}}
+async function sbLogout(){try{if(isLoggedIn())await fetch(SB_AUTH+'/logout',{method:'POST',
+    headers:{'apikey':SB_KEY,'Authorization':'Bearer '+sbSession.access_token}});}catch(e){}clearSession();}
+function authHeaders(extra){return Object.assign({'apikey':SB_KEY,
+  'Authorization':'Bearer '+((sbSession&&sbSession.access_token)||SB_KEY),'Content-Type':'application/json'},extra||{});}
+async function authFetch(url,opts){opts=opts||{};
+  if(sbSession&&sbSession.expires_at&&sbSession.expires_at*1000<Date.now()+15000)await sbRefresh();
+  const go=()=>fetch(url,Object.assign({},opts,{headers:authHeaders(opts.headers)}));
+  let r=await go();if(r.status===401&&await sbRefresh())r=await go();return r;}
+
+/* ----- Benefits data layer (Supabase) ----- */
+const rowToBenefit=x=>({id:x.id,n:x.name,c:x.category,badge:x.badge||'',tag:x.tag,d:x.description||'',a:Array.isArray(x.actions)?x.actions:[]});
+const benefitToRow=(b,order)=>{const r={name:b.n,category:b.c,badge:b.badge||null,tag:b.tag,description:b.d||'',actions:b.a||[]};if(order!=null)r.sort_order=order;return r;};
+async function fetchBenefits(){
+  const r=await fetch(SB_URL+'/rest/v1/benefits_hub_benefits?select=*&order=sort_order.asc,created_at.asc',{headers:sbHeaders()});
+  if(!r.ok)throw new Error('benefits');return (await r.json()).map(rowToBenefit);}
+async function refreshBenefitsFromServer(){
+  try{const rows=await fetchBenefits();benefitsFromServer=true;
+    if(rows.length){BENEFITS=rows;viewTrackingReady=true;renderBenefits();if(isLoggedIn()&&adminPanel&&!adminPanel.hidden)renderAdmList();}
+  }catch(e){/* offline → keep bundled defaults on screen */}}
+async function seedDefaultBenefits(){
+  const rows=DEFAULT_BENEFITS.map((b,i)=>benefitToRow(b,i));
+  const r=await authFetch(SB_URL+'/rest/v1/benefits_hub_benefits',{method:'POST',headers:{'Prefer':'return=minimal'},body:JSON.stringify(rows)});
+  return r.ok;}
+async function ensureSeeded(){try{const rows=await fetchBenefits();if(!rows.length)await seedDefaultBenefits();await refreshBenefitsFromServer();}catch(e){}}
+async function saveBenefit(b){
+  if(b.id){const r=await authFetch(SB_URL+'/rest/v1/benefits_hub_benefits?id=eq.'+encodeURIComponent(b.id),
+      {method:'PATCH',headers:{'Prefer':'return=minimal'},body:JSON.stringify(benefitToRow(b))});return r.ok;}
+  const r=await authFetch(SB_URL+'/rest/v1/benefits_hub_benefits',
+      {method:'POST',headers:{'Prefer':'return=minimal'},body:JSON.stringify(benefitToRow(b,BENEFITS.length))});return r.ok;}
+async function deleteBenefit(id){
+  const r=await authFetch(SB_URL+'/rest/v1/benefits_hub_benefits?id=eq.'+encodeURIComponent(id),{method:'DELETE',headers:{'Prefer':'return=minimal'}});return r.ok;}
+async function resetBenefitsToDefaults(){
+  const del=await authFetch(SB_URL+'/rest/v1/benefits_hub_benefits?id=not.is.null',{method:'DELETE',headers:{'Prefer':'return=minimal'}});
+  if(!del.ok)return false;return await seedDefaultBenefits();}
 
 /* view impressions — counted once per benefit per browser session */
 const SS_VIEWED='hfca-viewed-benefits';
@@ -756,14 +806,16 @@ function trackView(key,name){if(!key||viewedSet.has(key))return;viewedSet.add(ke
     body:JSON.stringify({p_key:key,p_name:name||key})}).catch(()=>{});}
 const viewIO=new IntersectionObserver(es=>es.forEach(en=>{if(en.isIntersecting){
   viewIO.unobserve(en.target);trackView(en.target.dataset.key||'',en.target.dataset.name||'');}}),{threshold:.5});
-function observeCards(){grid.querySelectorAll('.bcard').forEach(el=>viewIO.observe(el));}
+/* track views only once benefits carry stable server ids (avoids name→id double counting) */
+let viewTrackingReady=false;
+function observeCards(){if(!viewTrackingReady)return;grid.querySelectorAll('.bcard').forEach(el=>viewIO.observe(el));}
 
-/* change-log writer — records every admin mutation to Supabase */
+/* change-log writer — records every admin mutation to Supabase (authenticated) */
 function logChange(action,b,details){
   const name=b?String(b.n||''):null,cat=b?(CATS[b.c]||b.c||''):null;
-  fetch(SB_URL+'/rest/v1/benefits_hub_change_log',{method:'POST',
-    headers:{...sbHeaders(),'Prefer':'return=minimal'},
-    body:JSON.stringify({action,benefit_name:name,benefit_category:cat,actor:ADMIN_USER,details:details||null})}).catch(()=>{});}
+  return authFetch(SB_URL+'/rest/v1/benefits_hub_change_log',{method:'POST',
+    headers:{'Prefer':'return=minimal'},
+    body:JSON.stringify({action,benefit_name:name,benefit_category:cat,actor:adminEmail(),details:details||null})}).catch(()=>{});}
 
 /* ===== RENDER ===== */
 const grid=document.getElementById('grid');
@@ -801,13 +853,12 @@ document.getElementById('search').addEventListener('input',e=>{q=e.target.value.
 /* ===== SPOTLIGHT ===== */
 grid.addEventListener('pointermove',e=>{const c=e.target.closest('.bcard');if(!c)return;const r=c.getBoundingClientRect();c.querySelector('.bcard-in').style.setProperty('--mx',(e.clientX-r.left)+'px');c.querySelector('.bcard-in').style.setProperty('--my',(e.clientY-r.top)+'px');});
 
-/* ===== ADMIN ===== */
-const ADMIN_USER='HFCA',ADMIN_PASS='HFCA2345',SS_ADMIN='hfca-admin';
+/* ===== ADMIN (auth via Supabase) ===== */
 const adminOv=document.getElementById('adminOv'),adminLogin=document.getElementById('adminLogin'),adminPanel=document.getElementById('adminPanel');
 const admList=document.getElementById('admList'),benForm=document.getElementById('benForm');
 document.getElementById('bfCat').innerHTML=Object.keys(CATS).map(c=>`<option value="${c}">${CATS[c]}</option>`).join('');
 function openAdmin(){adminOv.hidden=false;document.body.style.overflow='hidden';
-  if(sessionStorage.getItem(SS_ADMIN)==='1')showPanel();
+  if(isLoggedIn())showPanel();
   else{adminLogin.hidden=false;adminPanel.hidden=true;document.getElementById('admUser').focus();}}
 function closeAdmin(){adminOv.hidden=true;document.body.style.overflow='';
   if(location.hash==='#admin')history.replaceState(null,'',location.pathname+location.search);}
@@ -818,15 +869,21 @@ adminOv.addEventListener('click',e=>{if(e.target===adminOv)closeAdmin();});
 addEventListener('keydown',e=>{if(e.key==='Escape'&&!adminOv.hidden)closeAdmin();});
 if(location.hash==='#admin')openAdmin();
 
-document.getElementById('loginForm').addEventListener('submit',e=>{e.preventDefault();
-  const u=document.getElementById('admUser').value.trim(),p=document.getElementById('admPass').value;
-  if(u===ADMIN_USER&&p===ADMIN_PASS){sessionStorage.setItem(SS_ADMIN,'1');document.getElementById('loginErr').hidden=true;e.target.reset();showPanel();}
-  else document.getElementById('loginErr').hidden=false;});
-document.getElementById('admLogout').addEventListener('click',()=>{sessionStorage.removeItem(SS_ADMIN);adminPanel.hidden=true;adminLogin.hidden=false;});
-document.getElementById('admReset').addEventListener('click',()=>{
+document.getElementById('loginForm').addEventListener('submit',async e=>{e.preventDefault();
+  const email=document.getElementById('admUser').value.trim(),p=document.getElementById('admPass').value;
+  const btn=e.target.querySelector('button[type=submit]');btn.disabled=true;
+  try{await sbLogin(email,p);document.getElementById('loginErr').hidden=true;e.target.reset();
+    showPanel();await ensureSeeded();renderAdmList();}
+  catch(err){document.getElementById('loginErr').hidden=false;}
+  finally{btn.disabled=false;}});
+document.getElementById('admLogout').addEventListener('click',async()=>{await sbLogout();adminPanel.hidden=true;adminLogin.hidden=false;});
+document.getElementById('admReset').addEventListener('click',async()=>{
+  if(!isLoggedIn())return;
   if(!confirm('לשחזר את רשימת ההטבות המקורית? כל השינויים שבוצעו יימחקו.'))return;
-  logChange('reset',null,{before_count:BENEFITS.length,after_count:DEFAULT_BENEFITS.length});
-  localStorage.removeItem(LS_BENEFITS);BENEFITS=DEFAULT_BENEFITS.map(b=>({...b}));renderBenefits();renderAdmList();resetBenForm();});
+  const before=BENEFITS.length;
+  if(!await resetBenefitsToDefaults()){alert('שחזור נכשל — בדקו חיבור/הרשאות.');return;}
+  await logChange('reset',null,{before_count:before,after_count:DEFAULT_BENEFITS.length});
+  await refreshBenefitsFromServer();renderAdmList();resetBenForm();loadViewCounts();});
 
 function renderAdmList(){
   admList.innerHTML=BENEFITS.length?BENEFITS.map((b,i)=>`<div class="adm-item">
@@ -845,12 +902,15 @@ admList.addEventListener('click',e=>{
     document.getElementById('bfDesc').value=b.d||'';
     document.getElementById('bfActs').value=(b.a||[]).map(a=>`${a.t} | ${a.h}`).join('\n');
     document.getElementById('bfTitle').textContent='עריכת: '+b.n;}
-  if(db){const i=+db.dataset.del;if(!BENEFITS[i])return;
-    if(!confirm('למחוק את ההטבה "'+BENEFITS[i].n+'"?'))return;
-    const removed=BENEFITS[i];logChange('delete',removed,{removed});
-    BENEFITS.splice(i,1);saveBenefits();renderBenefits();renderAdmList();resetBenForm();}});
+  if(db){const i=+db.dataset.del,removed=BENEFITS[i];if(!removed)return;
+    if(!confirm('למחוק את ההטבה "'+removed.n+'"?'))return;
+    (async()=>{
+      if(!removed.id||!await deleteBenefit(removed.id)){alert('מחיקה נכשלה — בדקו חיבור/הרשאות.');return;}
+      await logChange('delete',removed,{removed});
+      await refreshBenefitsFromServer();renderAdmList();resetBenForm();})();}});
 document.getElementById('bfCancel').addEventListener('click',resetBenForm);
-benForm.addEventListener('submit',e=>{e.preventDefault();
+benForm.addEventListener('submit',async e=>{e.preventDefault();
+  if(!isLoggedIn()){alert('נדרשת התחברות.');return;}
   const n=document.getElementById('bfName').value.trim(),c=document.getElementById('bfCat').value,
         tag=document.getElementById('bfTag').value.trim(),badge=document.getElementById('bfBadge').value,
         d=document.getElementById('bfDesc').value.trim();
@@ -858,11 +918,15 @@ benForm.addEventListener('submit',e=>{e.preventDefault();
   const a=document.getElementById('bfActs').value.split('\n').map(l=>{
     const ix=l.indexOf('|');if(ix<0)return null;
     const t=l.slice(0,ix).trim(),h=l.slice(ix+1).trim();return t&&h?{t,h}:null;}).filter(Boolean);
-  const b={n,c,tag,d};if(badge)b.badge=badge;b.a=a;
-  const idx=+document.getElementById('bfIdx').value;
-  if(idx>=0&&BENEFITS[idx]){const before=BENEFITS[idx];BENEFITS[idx]=b;logChange('update',b,{before,after:b});}
-  else{BENEFITS.push(b);logChange('create',b,{after:b});}
-  saveBenefits();renderBenefits();renderAdmList();resetBenForm();});
+  const idx=+document.getElementById('bfIdx').value,before=(idx>=0?BENEFITS[idx]:null);
+  const b={n,c,tag,d,a};if(badge)b.badge=badge;if(before&&before.id)b.id=before.id;
+  const btn=benForm.querySelector('button[type=submit]');btn.disabled=true;
+  try{
+    if(!await saveBenefit(b))throw 0;
+    await logChange(b.id?'update':'create',b,b.id?{before,after:b}:{after:b});
+    await refreshBenefitsFromServer();renderAdmList();resetBenForm();
+  }catch(err){alert('שמירה נכשלה — בדקו חיבור/הרשאות.');}
+  finally{btn.disabled=false;}});
 
 /* ===== ADMIN ANALYTICS — change log + view counts ===== */
 let admViewsMap={};
@@ -879,7 +943,7 @@ function switchAdminView(v){
 document.querySelectorAll('.atab').forEach(t=>t.addEventListener('click',()=>switchAdminView(t.dataset.view)));
 
 async function fetchViews(){
-  try{const r=await fetch(SB_URL+'/rest/v1/benefits_hub_views?select=benefit_key,benefit_name,views,updated_at&order=views.desc',{headers:sbHeaders()});
+  try{const r=await authFetch(SB_URL+'/rest/v1/benefits_hub_views?select=benefit_key,benefit_name,views,updated_at&order=views.desc');
     if(!r.ok)throw 0;return await r.json();}catch(e){return null;}}
 
 async function loadViewCounts(){
@@ -891,7 +955,7 @@ async function loadChangeLog(){
   const tb=document.querySelector('#logTable tbody'),meta=document.getElementById('logMeta');
   tb.innerHTML='<tr><td colspan="5" class="adm-empty">טוען…</td></tr>';
   try{
-    const r=await fetch(SB_URL+'/rest/v1/benefits_hub_change_log?select=*&order=created_at.desc&limit=300',{headers:sbHeaders()});
+    const r=await authFetch(SB_URL+'/rest/v1/benefits_hub_change_log?select=*&order=created_at.desc&limit=300');
     if(!r.ok)throw 0;const rows=await r.json();
     meta.textContent=rows.length?('לוג מלא · '+rows.length.toLocaleString('he-IL')+' רשומות'):'לוג מלא של כל שינוי שבוצע בניהול ההטבות';
     if(!rows.length){tb.innerHTML='<tr><td colspan="5" class="adm-empty">אין עדיין רישומי שינויים. כל הוספה, עריכה, מחיקה או שחזור יירשמו כאן.</td></tr>';return;}
@@ -920,6 +984,9 @@ async function loadViewsTable(){
 
 document.getElementById('logRefresh').addEventListener('click',loadChangeLog);
 document.getElementById('viewsRefresh').addEventListener('click',loadViewsTable);
+
+/* ===== BOOT — load benefits from Supabase (falls back to bundled defaults) ===== */
+refreshBenefitsFromServer();
 
 /* ===== NAV + PROGRESS ===== */
 const nav=document.getElementById('nav'),prog=document.getElementById('progress');let last=0;
