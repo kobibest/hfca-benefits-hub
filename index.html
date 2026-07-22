@@ -364,6 +364,33 @@ footer{border-top:1px solid var(--line);padding-block:44px;background:var(--pape
 .adm-form-btns .submit{margin-top:0;flex:1;padding:13px}
 @media(max-width:760px){.admin-cols{grid-template-columns:1fr}.adm-list{max-height:300px}}
 
+/* admin tabs + tables + view counts */
+.admin-tabs{display:flex;gap:6px;margin-bottom:22px;flex-wrap:wrap}
+.atab{font-size:.9rem;font-weight:700;padding:9px 18px;border-radius:var(--r-pill);border:1px solid var(--line);color:var(--muted);background:var(--bg);transition:all .2s;display:inline-flex;align-items:center;gap:7px}
+.atab svg{width:16px;height:16px}
+.atab:hover{color:var(--ink);border-color:var(--line-2)}
+.atab.on{background:var(--grad-royal);color:#fff;border-color:transparent;box-shadow:0 10px 22px -12px rgba(59,130,246,.9)}
+.admin-view[hidden]{display:none}
+.adm-panel-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;flex-wrap:wrap}
+.adm-meta{font-size:.88rem;color:var(--muted);font-weight:700}
+.adm-table-wrap{max-height:540px;overflow:auto;border:1px solid var(--line);border-radius:var(--r-sm)}
+.adm-table{width:100%;border-collapse:collapse;font-size:.9rem}
+.adm-table th,.adm-table td{padding:11px 13px;text-align:start;border-bottom:1px solid var(--line);white-space:nowrap}
+.adm-table th{position:sticky;top:0;background:var(--bg-2);font-weight:800;font-size:.82rem;color:var(--muted);z-index:1}
+.adm-table tbody tr:last-child td{border-bottom:none}
+.adm-table td.wrap{white-space:normal;min-width:180px}
+.adm-table .num{font-weight:800;font-variant-numeric:tabular-nums}
+.log-act{font-size:.74rem;font-weight:800;padding:3px 11px;border-radius:var(--r-pill);display:inline-block}
+.log-act.create{background:color-mix(in srgb,var(--emerald) 15%,transparent);color:var(--emerald)}
+.log-act.update{background:color-mix(in srgb,var(--royal) 15%,transparent);color:var(--royal-deep)}
+.log-act.delete{background:color-mix(in srgb,#e11d48 14%,transparent);color:#e11d48}
+.log-act.reset{background:color-mix(in srgb,var(--gold) 18%,transparent);color:var(--gold-deep)}
+.adm-item .views-badge{font-size:.72rem;font-weight:800;color:var(--sky-ink);background:color-mix(in srgb,var(--sky) 14%,transparent);
+  border:1px solid color-mix(in srgb,var(--sky) 26%,transparent);padding:3px 10px;border-radius:var(--r-pill);
+  display:inline-flex;align-items:center;gap:4px;flex-shrink:0}
+.adm-item .views-badge svg{width:13px;height:13px}
+.adm-empty{padding:34px 16px;text-align:center;color:var(--muted);font-weight:600}
+
 /* ============================ BENEFIT DETAIL PAGE ============================ */
 .bcard{cursor:pointer}
 .act.more{border-color:color-mix(in srgb,var(--gold) 42%,transparent);color:var(--gold)}
@@ -626,9 +653,9 @@ footer{border-top:1px solid var(--line);padding-block:44px;background:var(--pape
         <button class="iconbtn adm-close" aria-label="סגירה"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
       </div>
       <form id="loginForm" novalidate>
-        <div class="field"><label>שם משתמש</label><input id="admUser" autocomplete="username" required></div>
+        <div class="field"><label>אימייל</label><input id="admUser" type="email" autocomplete="username" required placeholder="admin@example.com"></div>
         <div class="field"><label>סיסמה</label><input id="admPass" type="password" autocomplete="current-password" required></div>
-        <p class="admin-err" id="loginErr" hidden>שם משתמש או סיסמה שגויים</p>
+        <p class="admin-err" id="loginErr" hidden>אימייל או סיסמה שגויים</p>
         <button type="submit" class="submit">כניסה</button>
       </form>
     </div>
@@ -642,19 +669,53 @@ footer{border-top:1px solid var(--line);padding-block:44px;background:var(--pape
           <button class="iconbtn adm-close" aria-label="סגירה"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
         </div>
       </div>
-      <div class="admin-cols">
-        <div class="adm-list" id="admList"></div>
-        <form class="adm-form" id="benForm" novalidate>
-          <h4 id="bfTitle">הוספת הטבה חדשה</h4>
-          <input type="hidden" id="bfIdx" value="-1">
-          <div class="field"><label>שם ההטבה <span class="req">*</span></label><input id="bfName" required placeholder="שם הספק / השירות"></div>
-          <div class="field"><label>קטגוריה <span class="req">*</span></label><select id="bfCat" required></select></div>
-          <div class="field"><label>תגית</label><select id="bfBadge"><option value="">ללא</option><option value="pop">פופולרי</option><option value="new">חדש</option></select></div>
-          <div class="field"><label>שורת ההטבה <span class="req">*</span></label><input id="bfTag" required placeholder="לדוגמה: 15% הנחה לחברי ההתאחדות"></div>
-          <div class="field"><label>תיאור</label><textarea id="bfDesc" placeholder="תיאור קצר של ההטבה…"></textarea></div>
-          <div class="field"><label>קישורים — שורה לכל קישור: כיתוב | כתובת</label><textarea id="bfActs" placeholder="הצטרפות באתר | https://example.com&#10;טלפון | tel:03-1234567"></textarea></div>
-          <div class="adm-form-btns"><button type="submit" class="submit">שמירה</button><button type="button" class="mini" id="bfCancel">ניקוי</button></div>
-        </form>
+      <div class="admin-tabs">
+        <button type="button" class="atab on" data-view="benefits"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 7h-9M14 17H5M17 3v8M7 21v-8"/></svg>ניהול הטבות</button>
+        <button type="button" class="atab" data-view="log"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>לוג שינויים</button>
+        <button type="button" class="atab" data-view="views"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>צפיות בהטבות</button>
+      </div>
+
+      <div class="admin-view" id="viewBenefits">
+        <div class="admin-cols">
+          <div class="adm-list" id="admList"></div>
+          <form class="adm-form" id="benForm" novalidate>
+            <h4 id="bfTitle">הוספת הטבה חדשה</h4>
+            <input type="hidden" id="bfIdx" value="-1">
+            <div class="field"><label>שם ההטבה <span class="req">*</span></label><input id="bfName" required placeholder="שם הספק / השירות"></div>
+            <div class="field"><label>קטגוריה <span class="req">*</span></label><select id="bfCat" required></select></div>
+            <div class="field"><label>תגית</label><select id="bfBadge"><option value="">ללא</option><option value="pop">פופולרי</option><option value="new">חדש</option></select></div>
+            <div class="field"><label>שורת ההטבה <span class="req">*</span></label><input id="bfTag" required placeholder="לדוגמה: 15% הנחה לחברי ההתאחדות"></div>
+            <div class="field"><label>תיאור</label><textarea id="bfDesc" placeholder="תיאור קצר של ההטבה…"></textarea></div>
+            <div class="field"><label>קישורים — שורה לכל קישור: כיתוב | כתובת</label><textarea id="bfActs" placeholder="הצטרפות באתר | https://example.com&#10;טלפון | tel:03-1234567"></textarea></div>
+            <div class="adm-form-btns"><button type="submit" class="submit">שמירה</button><button type="button" class="mini" id="bfCancel">ניקוי</button></div>
+          </form>
+        </div>
+      </div>
+
+      <div class="admin-view" id="viewLog" hidden>
+        <div class="adm-panel-head">
+          <span class="adm-meta" id="logMeta">לוג מלא של כל שינוי שבוצע בניהול ההטבות</span>
+          <button type="button" class="mini" id="logRefresh">רענון</button>
+        </div>
+        <div class="adm-table-wrap">
+          <table class="adm-table" id="logTable">
+            <thead><tr><th>תאריך ושעה</th><th>פעולה</th><th>הטבה</th><th>קטגוריה</th><th>מנהל</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="admin-view" id="viewViews" hidden>
+        <div class="adm-panel-head">
+          <span class="adm-meta" id="viewsMeta">מספר הצפיות המדויק בכל הטבה</span>
+          <button type="button" class="mini" id="viewsRefresh">רענון</button>
+        </div>
+        <div class="adm-table-wrap">
+          <table class="adm-table" id="viewsTable">
+            <thead><tr><th>#</th><th>הטבה</th><th>קטגוריה</th><th>צפיות</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
       </div>
     </div>
 
@@ -706,11 +767,9 @@ const DEFAULT_BENEFITS=[
  {n:'ביטוח ישיר (555)',c:'insurance',badge:'pop',tag:'ביטוח רכב ודירה בהנחה (קוד 159)',d:'הנחות על ביטוח רכב וביטוח דירה.',a:[{t:'הצטרפות באתר',h:'https://www.555.co.il/pearl/apps/cooperation-landing-page/homeStep?attentionCode=159'}]},
  {n:'ליברה',c:'insurance',badge:'new',tag:'ביטוח אחריות מקצועית ייעודי',d:'ביטוח אחריות מקצועית מותאם ליועצי משכנתאות.',a:[{t:'הצטרפות באתר',h:'https://libra.activetrail.biz/mortgage_broker_insurance'}]}
 ];
-const LS_BENEFITS='hfca-benefits-data';
-let BENEFITS;
-try{const s=JSON.parse(localStorage.getItem(LS_BENEFITS));BENEFITS=Array.isArray(s)&&s.length?s:DEFAULT_BENEFITS.map(b=>({...b}));}
-catch(e){BENEFITS=DEFAULT_BENEFITS.map(b=>({...b}));}
-const saveBenefits=()=>localStorage.setItem(LS_BENEFITS,JSON.stringify(BENEFITS));
+/* Benefits live in Supabase; DEFAULT_BENEFITS is the bundled fallback + seed source. */
+let BENEFITS=DEFAULT_BENEFITS.map(b=>({...b}));
+let benefitsFromServer=false;
 const TEAM=[{n:'אבי מלכי',r:'יו״ר הוועדה',img:'avi-malki-B-Jdzob7.jpg',chair:1},{n:'שי פרלמן',r:'חבר ועדה',img:'shai-perlman-D2q96NCi.jpg'},{n:'נטליה אומנסקי',r:'חברת ועדה',img:'natalia-omansky-B_NR3TYz.jpg'},{n:'הילה קניג',r:'חברת ועדה',img:'hila-kenig-DG3VLOH7.jpg'},{n:'כרמית סקג׳יו',r:'חברת ועדה',img:'carmit-skajio-Bb2ZJOXO.jpg'},{n:'דורון שטרית',r:'חבר ועדה',img:'doron-shtrit-pFn9O6E5.jpg'}];
 
 /* ===== HELPERS ===== */
@@ -725,8 +784,7 @@ function actHtml(b){const t=bt(b.h);let ic,cls='act';
 function card(b,i){
   const badge=b.badge==='pop'?`<span class="badge pop">${svg('<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>',1)}פופולרי</span>`:b.badge==='new'?`<span class="badge new">חדש</span>`:'';
   const more=`<button type="button" class="act more" data-details="${i}" aria-label="פרטים מלאים">${svg('<circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/>')}</button>`;
-  return `<article class="bcard rv" data-i="${i}" data-cat="${b.c}" data-s="${esc((b.n+' '+b.tag+' '+b.d+' '+(CATS[b.c]||'')).toLowerCase())}" style="transition-delay:${(i%3)*60}ms">
-
+  return `<article class="bcard rv" data-i="${i}" data-cat="${b.c}" data-key="${esc(benefitKey(b))}" data-name="${esc(b.n)}" data-s="${esc((b.n+' '+b.tag+' '+b.d+' '+(CATS[b.c]||'')).toLowerCase())}" style="transition-delay:${(i%3)*60}ms">
     <div class="bcard-in">
       <div class="bc-top">
         <div class="bc-ic">${svg(ICON[b.c]||ICON.professional)}</div>
@@ -737,6 +795,84 @@ function card(b,i){
       <p class="bc-desc">${esc(b.d)}</p>
       <div class="bc-acts">${more}${(b.a||[]).map(actHtml).join('')}</div>
     </div></article>`;}
+
+/* ===== SUPABASE — view tracking + change log ===== */
+const SB_URL='https://ekpkmqczjplamtadvqgv.supabase.co';
+const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVrcGttcWN6anBsYW10YWR2cWd2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwMzM2MjksImV4cCI6MjA5NjYwOTYyOX0.D2I5PE-Zl6b_mOIsRfwVo7C8qsLeen1Fbk4-62hpDJM';
+const sbHeaders=()=>({'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json'});
+const benefitKey=b=>String((b&&(b.id||b.n))||'').trim();
+
+/* ----- Supabase Auth (admin login via GoTrue REST) ----- */
+const SB_AUTH=SB_URL+'/auth/v1';
+const LS_SESSION='hfca-admin-session';
+let sbSession=null;try{sbSession=JSON.parse(localStorage.getItem(LS_SESSION)||'null');}catch(e){}
+const adminEmail=()=>(sbSession&&sbSession.user&&sbSession.user.email)||'admin';
+function saveSession(s){sbSession=s;try{localStorage.setItem(LS_SESSION,JSON.stringify(s));}catch(e){}}
+function clearSession(){sbSession=null;try{localStorage.removeItem(LS_SESSION);}catch(e){}}
+function isLoggedIn(){return !!(sbSession&&sbSession.access_token);}
+async function sbLogin(email,password){
+  const r=await fetch(SB_AUTH+'/token?grant_type=password',{method:'POST',
+    headers:{'apikey':SB_KEY,'Content-Type':'application/json'},body:JSON.stringify({email,password})});
+  if(!r.ok)throw new Error('login');saveSession(await r.json());return true;}
+async function sbRefresh(){
+  if(!sbSession||!sbSession.refresh_token)return false;
+  try{const r=await fetch(SB_AUTH+'/token?grant_type=refresh_token',{method:'POST',
+    headers:{'apikey':SB_KEY,'Content-Type':'application/json'},body:JSON.stringify({refresh_token:sbSession.refresh_token})});
+    if(!r.ok){clearSession();return false;}saveSession(await r.json());return true;}catch(e){return false;}}
+async function sbLogout(){try{if(isLoggedIn())await fetch(SB_AUTH+'/logout',{method:'POST',
+    headers:{'apikey':SB_KEY,'Authorization':'Bearer '+sbSession.access_token}});}catch(e){}clearSession();}
+function authHeaders(extra){return Object.assign({'apikey':SB_KEY,
+  'Authorization':'Bearer '+((sbSession&&sbSession.access_token)||SB_KEY),'Content-Type':'application/json'},extra||{});}
+async function authFetch(url,opts){opts=opts||{};
+  if(sbSession&&sbSession.expires_at&&sbSession.expires_at*1000<Date.now()+15000)await sbRefresh();
+  const go=()=>fetch(url,Object.assign({},opts,{headers:authHeaders(opts.headers)}));
+  let r=await go();if(r.status===401&&await sbRefresh())r=await go();return r;}
+
+/* ----- Benefits data layer (Supabase) ----- */
+const rowToBenefit=x=>({id:x.id,n:x.name,c:x.category,badge:x.badge||'',tag:x.tag,d:x.description||'',a:Array.isArray(x.actions)?x.actions:[]});
+const benefitToRow=(b,order)=>{const r={name:b.n,category:b.c,badge:b.badge||null,tag:b.tag,description:b.d||'',actions:b.a||[]};if(order!=null)r.sort_order=order;return r;};
+async function fetchBenefits(){
+  const r=await fetch(SB_URL+'/rest/v1/benefits_hub_benefits?select=*&order=sort_order.asc,created_at.asc',{headers:sbHeaders()});
+  if(!r.ok)throw new Error('benefits');return (await r.json()).map(rowToBenefit);}
+async function refreshBenefitsFromServer(){
+  try{const rows=await fetchBenefits();benefitsFromServer=true;
+    if(rows.length){BENEFITS=rows;viewTrackingReady=true;renderBenefits();if(isLoggedIn()&&adminPanel&&!adminPanel.hidden)renderAdmList();}
+  }catch(e){/* offline → keep bundled defaults on screen */}}
+async function seedDefaultBenefits(){
+  const rows=DEFAULT_BENEFITS.map((b,i)=>benefitToRow(b,i));
+  const r=await authFetch(SB_URL+'/rest/v1/benefits_hub_benefits',{method:'POST',headers:{'Prefer':'return=minimal'},body:JSON.stringify(rows)});
+  return r.ok;}
+async function ensureSeeded(){try{const rows=await fetchBenefits();if(!rows.length)await seedDefaultBenefits();await refreshBenefitsFromServer();}catch(e){}}
+async function saveBenefit(b){
+  if(b.id){const r=await authFetch(SB_URL+'/rest/v1/benefits_hub_benefits?id=eq.'+encodeURIComponent(b.id),
+      {method:'PATCH',headers:{'Prefer':'return=minimal'},body:JSON.stringify(benefitToRow(b))});return r.ok;}
+  const r=await authFetch(SB_URL+'/rest/v1/benefits_hub_benefits',
+      {method:'POST',headers:{'Prefer':'return=minimal'},body:JSON.stringify(benefitToRow(b,BENEFITS.length))});return r.ok;}
+async function deleteBenefit(id){
+  const r=await authFetch(SB_URL+'/rest/v1/benefits_hub_benefits?id=eq.'+encodeURIComponent(id),{method:'DELETE',headers:{'Prefer':'return=minimal'}});return r.ok;}
+async function resetBenefitsToDefaults(){
+  const del=await authFetch(SB_URL+'/rest/v1/benefits_hub_benefits?id=not.is.null',{method:'DELETE',headers:{'Prefer':'return=minimal'}});
+  if(!del.ok)return false;return await seedDefaultBenefits();}
+
+/* view impressions — counted once per benefit per browser session */
+const SS_VIEWED='hfca-viewed-benefits';
+let viewedSet;try{viewedSet=new Set(JSON.parse(sessionStorage.getItem(SS_VIEWED)||'[]'));}catch(e){viewedSet=new Set();}
+function trackView(key,name){if(!key||viewedSet.has(key))return;viewedSet.add(key);
+  try{sessionStorage.setItem(SS_VIEWED,JSON.stringify([...viewedSet]));}catch(e){}
+  fetch(SB_URL+'/rest/v1/rpc/increment_benefit_view',{method:'POST',headers:sbHeaders(),
+    body:JSON.stringify({p_key:key,p_name:name||key})}).catch(()=>{});}
+const viewIO=new IntersectionObserver(es=>es.forEach(en=>{if(en.isIntersecting){
+  viewIO.unobserve(en.target);trackView(en.target.dataset.key||'',en.target.dataset.name||'');}}),{threshold:.5});
+/* track views only once benefits carry stable server ids (avoids name→id double counting) */
+let viewTrackingReady=false;
+function observeCards(){if(!viewTrackingReady)return;grid.querySelectorAll('.bcard').forEach(el=>viewIO.observe(el));}
+
+/* change-log writer — records every admin mutation to Supabase (authenticated) */
+function logChange(action,b,details){
+  const name=b?String(b.n||''):null,cat=b?(CATS[b.c]||b.c||''):null;
+  return authFetch(SB_URL+'/rest/v1/benefits_hub_change_log',{method:'POST',
+    headers:{'Prefer':'return=minimal'},
+    body:JSON.stringify({action,benefit_name:name,benefit_category:cat,actor:adminEmail(),details:details||null})}).catch(()=>{});}
 
 /* ===== RENDER ===== */
 const grid=document.getElementById('grid');
@@ -757,6 +893,7 @@ function renderBenefits(){
   sb.dataset.count=BENEFITS.length;sb.textContent=BENEFITS.length;
   sc.dataset.count=nc;sc.textContent=nc;
   filt();
+  observeCards();
   if(booted)grid.querySelectorAll('.rv').forEach(el=>el.classList.add('in'));
 }
 let cat='all',q='';
@@ -803,6 +940,7 @@ function benefitDetailHtml(b){
     <div class="bd-foot">${svg('<path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/>')}הטבה בלעדית לחברי התאחדות יועצי המשכנתאות</div>`;}
 function openBenefit(i,fromHash){
   const b=BENEFITS[i];if(!b)return;
+  if(viewTrackingReady)trackView(benefitKey(b),b.n);
   bdBody.innerHTML=benefitDetailHtml(b);
   bdOv.hidden=false;requestAnimationFrame(()=>bdOv.classList.add('show'));
   document.body.style.overflow='hidden';
@@ -831,35 +969,42 @@ addEventListener('keydown',e=>{if(e.key==='Escape'&&!bdOv.hidden)closeBenefit();
 addEventListener('hashchange',syncBenefitHash);
 syncBenefitHash();
 
-/* ===== ADMIN ===== */
-const ADMIN_USER='HFCA',ADMIN_PASS='HFCA2345',SS_ADMIN='hfca-admin';
+/* ===== ADMIN (auth via Supabase) ===== */
 const adminOv=document.getElementById('adminOv'),adminLogin=document.getElementById('adminLogin'),adminPanel=document.getElementById('adminPanel');
 const admList=document.getElementById('admList'),benForm=document.getElementById('benForm');
 document.getElementById('bfCat').innerHTML=Object.keys(CATS).map(c=>`<option value="${c}">${CATS[c]}</option>`).join('');
 function openAdmin(){adminOv.hidden=false;document.body.style.overflow='hidden';
-  if(sessionStorage.getItem(SS_ADMIN)==='1')showPanel();
+  if(isLoggedIn())showPanel();
   else{adminLogin.hidden=false;adminPanel.hidden=true;document.getElementById('admUser').focus();}}
 function closeAdmin(){adminOv.hidden=true;document.body.style.overflow='';
   if(location.hash==='#admin')history.replaceState(null,'',location.pathname+location.search);}
-function showPanel(){adminLogin.hidden=true;adminPanel.hidden=false;resetBenForm();renderAdmList();}
+function showPanel(){adminLogin.hidden=true;adminPanel.hidden=false;resetBenForm();switchAdminView('benefits');renderAdmList();loadViewCounts();}
 document.getElementById('adminLink').addEventListener('click',e=>{e.preventDefault();openAdmin();});
 document.querySelectorAll('.adm-close').forEach(b=>b.addEventListener('click',closeAdmin));
 adminOv.addEventListener('click',e=>{if(e.target===adminOv)closeAdmin();});
 addEventListener('keydown',e=>{if(e.key==='Escape'&&!adminOv.hidden)closeAdmin();});
 if(location.hash==='#admin')openAdmin();
 
-document.getElementById('loginForm').addEventListener('submit',e=>{e.preventDefault();
-  const u=document.getElementById('admUser').value.trim(),p=document.getElementById('admPass').value;
-  if(u===ADMIN_USER&&p===ADMIN_PASS){sessionStorage.setItem(SS_ADMIN,'1');document.getElementById('loginErr').hidden=true;e.target.reset();showPanel();}
-  else document.getElementById('loginErr').hidden=false;});
-document.getElementById('admLogout').addEventListener('click',()=>{sessionStorage.removeItem(SS_ADMIN);adminPanel.hidden=true;adminLogin.hidden=false;});
-document.getElementById('admReset').addEventListener('click',()=>{
+document.getElementById('loginForm').addEventListener('submit',async e=>{e.preventDefault();
+  const email=document.getElementById('admUser').value.trim(),p=document.getElementById('admPass').value;
+  const btn=e.target.querySelector('button[type=submit]');btn.disabled=true;
+  try{await sbLogin(email,p);document.getElementById('loginErr').hidden=true;e.target.reset();
+    showPanel();await ensureSeeded();renderAdmList();}
+  catch(err){document.getElementById('loginErr').hidden=false;}
+  finally{btn.disabled=false;}});
+document.getElementById('admLogout').addEventListener('click',async()=>{await sbLogout();adminPanel.hidden=true;adminLogin.hidden=false;});
+document.getElementById('admReset').addEventListener('click',async()=>{
+  if(!isLoggedIn())return;
   if(!confirm('לשחזר את רשימת ההטבות המקורית? כל השינויים שבוצעו יימחקו.'))return;
-  localStorage.removeItem(LS_BENEFITS);BENEFITS=DEFAULT_BENEFITS.map(b=>({...b}));renderBenefits();renderAdmList();resetBenForm();});
+  const before=BENEFITS.length;
+  if(!await resetBenefitsToDefaults()){alert('שחזור נכשל — בדקו חיבור/הרשאות.');return;}
+  await logChange('reset',null,{before_count:before,after_count:DEFAULT_BENEFITS.length});
+  await refreshBenefitsFromServer();renderAdmList();resetBenForm();loadViewCounts();});
 
 function renderAdmList(){
   admList.innerHTML=BENEFITS.length?BENEFITS.map((b,i)=>`<div class="adm-item">
     <div class="ti"><b>${esc(b.n)}</b><span>${CATS[b.c]||''} · ${esc(b.tag)}</span></div>
+    <span class="views-badge" title="צפיות">${svg('<path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>')}${(admViewsMap[benefitKey(b)]||0).toLocaleString('he-IL')}</span>
     <button type="button" class="ib" data-edit="${i}" aria-label="עריכה">${svg('<path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/>')}</button>
     <button type="button" class="ib del" data-del="${i}" aria-label="מחיקה">${svg('<path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>')}</button>
   </div>`).join(''):'<p style="color:var(--muted);text-align:center;padding:20px">אין הטבות. הוסיפו הטבה חדשה בטופס.</p>';}
@@ -873,11 +1018,15 @@ admList.addEventListener('click',e=>{
     document.getElementById('bfDesc').value=b.d||'';
     document.getElementById('bfActs').value=(b.a||[]).map(a=>`${a.t} | ${a.h}`).join('\n');
     document.getElementById('bfTitle').textContent='עריכת: '+b.n;}
-  if(db){const i=+db.dataset.del;if(!BENEFITS[i])return;
-    if(!confirm('למחוק את ההטבה "'+BENEFITS[i].n+'"?'))return;
-    BENEFITS.splice(i,1);saveBenefits();renderBenefits();renderAdmList();resetBenForm();}});
+  if(db){const i=+db.dataset.del,removed=BENEFITS[i];if(!removed)return;
+    if(!confirm('למחוק את ההטבה "'+removed.n+'"?'))return;
+    (async()=>{
+      if(!removed.id||!await deleteBenefit(removed.id)){alert('מחיקה נכשלה — בדקו חיבור/הרשאות.');return;}
+      await logChange('delete',removed,{removed});
+      await refreshBenefitsFromServer();renderAdmList();resetBenForm();})();}});
 document.getElementById('bfCancel').addEventListener('click',resetBenForm);
-benForm.addEventListener('submit',e=>{e.preventDefault();
+benForm.addEventListener('submit',async e=>{e.preventDefault();
+  if(!isLoggedIn()){alert('נדרשת התחברות.');return;}
   const n=document.getElementById('bfName').value.trim(),c=document.getElementById('bfCat').value,
         tag=document.getElementById('bfTag').value.trim(),badge=document.getElementById('bfBadge').value,
         d=document.getElementById('bfDesc').value.trim();
@@ -885,10 +1034,75 @@ benForm.addEventListener('submit',e=>{e.preventDefault();
   const a=document.getElementById('bfActs').value.split('\n').map(l=>{
     const ix=l.indexOf('|');if(ix<0)return null;
     const t=l.slice(0,ix).trim(),h=l.slice(ix+1).trim();return t&&h?{t,h}:null;}).filter(Boolean);
-  const b={n,c,tag,d};if(badge)b.badge=badge;b.a=a;
-  const idx=+document.getElementById('bfIdx').value;
-  if(idx>=0&&BENEFITS[idx])BENEFITS[idx]=b;else BENEFITS.push(b);
-  saveBenefits();renderBenefits();renderAdmList();resetBenForm();});
+  const idx=+document.getElementById('bfIdx').value,before=(idx>=0?BENEFITS[idx]:null);
+  const b={n,c,tag,d,a};if(badge)b.badge=badge;if(before&&before.id)b.id=before.id;
+  const btn=benForm.querySelector('button[type=submit]');btn.disabled=true;
+  try{
+    if(!await saveBenefit(b))throw 0;
+    await logChange(b.id?'update':'create',b,b.id?{before,after:b}:{after:b});
+    await refreshBenefitsFromServer();renderAdmList();resetBenForm();
+  }catch(err){alert('שמירה נכשלה — בדקו חיבור/הרשאות.');}
+  finally{btn.disabled=false;}});
+
+/* ===== ADMIN ANALYTICS — change log + view counts ===== */
+let admViewsMap={};
+const LOG_ACT={create:'הוספה',update:'עריכה',delete:'מחיקה',reset:'שחזור ברירת מחדל'};
+function fmtDate(s){try{return new Date(s).toLocaleString('he-IL',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});}catch(e){return s||'';}}
+
+function switchAdminView(v){
+  document.querySelectorAll('.atab').forEach(t=>t.classList.toggle('on',t.dataset.view===v));
+  document.getElementById('viewBenefits').hidden=v!=='benefits';
+  document.getElementById('viewLog').hidden=v!=='log';
+  document.getElementById('viewViews').hidden=v!=='views';
+  if(v==='log')loadChangeLog();
+  if(v==='views')loadViewsTable();}
+document.querySelectorAll('.atab').forEach(t=>t.addEventListener('click',()=>switchAdminView(t.dataset.view)));
+
+async function fetchViews(){
+  try{const r=await authFetch(SB_URL+'/rest/v1/benefits_hub_views?select=benefit_key,benefit_name,views,updated_at&order=views.desc');
+    if(!r.ok)throw 0;return await r.json();}catch(e){return null;}}
+
+async function loadViewCounts(){
+  const rows=await fetchViews();if(!rows)return;
+  admViewsMap={};rows.forEach(x=>admViewsMap[x.benefit_key]=x.views);
+  if(!document.getElementById('viewBenefits').hidden)renderAdmList();}
+
+async function loadChangeLog(){
+  const tb=document.querySelector('#logTable tbody'),meta=document.getElementById('logMeta');
+  tb.innerHTML='<tr><td colspan="5" class="adm-empty">טוען…</td></tr>';
+  try{
+    const r=await authFetch(SB_URL+'/rest/v1/benefits_hub_change_log?select=*&order=created_at.desc&limit=300');
+    if(!r.ok)throw 0;const rows=await r.json();
+    meta.textContent=rows.length?('לוג מלא · '+rows.length.toLocaleString('he-IL')+' רשומות'):'לוג מלא של כל שינוי שבוצע בניהול ההטבות';
+    if(!rows.length){tb.innerHTML='<tr><td colspan="5" class="adm-empty">אין עדיין רישומי שינויים. כל הוספה, עריכה, מחיקה או שחזור יירשמו כאן.</td></tr>';return;}
+    tb.innerHTML=rows.map(x=>`<tr>
+      <td>${esc(fmtDate(x.created_at))}</td>
+      <td><span class="log-act ${esc(x.action)}">${esc(LOG_ACT[x.action]||x.action)}</span></td>
+      <td class="wrap">${esc(x.benefit_name||'—')}</td>
+      <td>${esc(x.benefit_category||'—')}</td>
+      <td>${esc(x.actor||'—')}</td>
+    </tr>`).join('');
+  }catch(e){tb.innerHTML='<tr><td colspan="5" class="adm-empty">שגיאה בטעינת הלוג — בדקו את החיבור לשרת.</td></tr>';}}
+
+async function loadViewsTable(){
+  const tb=document.querySelector('#viewsTable tbody'),meta=document.getElementById('viewsMeta');
+  tb.innerHTML='<tr><td colspan="4" class="adm-empty">טוען…</td></tr>';
+  const rows=await fetchViews();
+  if(!rows){tb.innerHTML='<tr><td colspan="4" class="adm-empty">שגיאה בטעינת הצפיות — בדקו את החיבור לשרת.</td></tr>';return;}
+  const map={};rows.forEach(x=>map[x.benefit_key]=x.views);admViewsMap=map;
+  const merged=BENEFITS.map(b=>({name:b.n,cat:CATS[b.c]||b.c||'',views:map[benefitKey(b)]||0}));
+  rows.forEach(x=>{if(!BENEFITS.some(b=>benefitKey(b)===x.benefit_key))merged.push({name:(x.benefit_name||x.benefit_key)+' (נמחקה)',cat:'—',views:x.views});});
+  merged.sort((a,b)=>b.views-a.views);
+  const total=merged.reduce((s,x)=>s+(x.views||0),0);
+  meta.textContent='סה״כ '+total.toLocaleString('he-IL')+' צפיות · '+merged.length.toLocaleString('he-IL')+' הטבות';
+  tb.innerHTML=merged.length?merged.map((x,i)=>`<tr><td class="num">${i+1}</td><td class="wrap">${esc(x.name)}</td><td>${esc(x.cat)}</td><td class="num">${(x.views||0).toLocaleString('he-IL')}</td></tr>`).join('')
+    :'<tr><td colspan="4" class="adm-empty">עדיין אין צפיות שנרשמו.</td></tr>';}
+
+document.getElementById('logRefresh').addEventListener('click',loadChangeLog);
+document.getElementById('viewsRefresh').addEventListener('click',loadViewsTable);
+
+/* ===== BOOT — load benefits from Supabase (falls back to bundled defaults) ===== */
+refreshBenefitsFromServer();
 
 /* ===== NAV ===== */
 const nav=document.getElementById('nav');
