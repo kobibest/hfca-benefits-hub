@@ -136,10 +136,11 @@ h1,h2,h3,h4,.serif{font-family:var(--font-serif);font-weight:800;letter-spacing:
 .hstat .l{font-size:.9rem;color:var(--muted);font-weight:500;margin-top:7px}
 
 /* membership card visual */
-.card-stage{position:relative;display:grid;place-items:center;min-height:380px}
-.card-stage::before{content:"";position:absolute;width:min(400px,84vw);aspect-ratio:1.62/1;border-radius:20px;
+.card-stage{position:relative;display:flex;flex-direction:column;align-items:center;gap:30px;min-height:380px}
+.mcard-wrap{position:relative;width:min(400px,84vw)}
+.mcard-wrap::before{content:"";position:absolute;inset:0;border-radius:20px;
   border:1px solid var(--gold);opacity:.45;transform:translate(18px,20px) rotate(-3deg)}
-.mcard{position:relative;width:min(400px,84vw);aspect-ratio:1.62/1;border-radius:20px;padding:30px;
+.mcard{position:relative;width:100%;aspect-ratio:1.62/1;border-radius:20px;padding:30px;
   background:linear-gradient(155deg,#20293f 0%,#151d31 55%,#101627 100%);
   border:1px solid rgba(194,161,90,.35);box-shadow:0 30px 60px -30px rgba(21,29,49,.7);
   display:flex;flex-direction:column;justify-content:space-between;color:#fff;overflow:hidden}
@@ -156,6 +157,20 @@ h1,h2,h3,h4,.serif{font-family:var(--font-serif);font-weight:800;letter-spacing:
   border-top:1px solid rgba(255,255,255,.12);padding-top:16px}
 .mcard-foot span{font-size:.82rem;color:#c3cbdb;font-weight:500}
 .mcard-foot span:last-child{color:var(--gold-lite)}
+.cat-quick-box{display:flex;flex-direction:column;align-items:center;gap:14px;width:min(400px,84vw)}
+.cat-quick-title{font-size:.76rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--faint)}
+.cat-quick{display:flex;flex-wrap:wrap;justify-content:center;gap:10px}
+.cq{position:relative;width:50px;height:50px;border-radius:13px;display:grid;place-items:center;
+  background:var(--surface);border:1px solid var(--line-2);color:var(--ink-soft);transition:transform .2s,color .2s,border-color .2s,background .2s}
+.cq svg{width:22px;height:22px}
+.cq:hover{border-color:var(--gold);color:var(--gold-deep);transform:translateY(-2px)}
+.cq.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.cq::after{content:attr(aria-label);position:absolute;bottom:calc(100% + 9px);left:50%;transform:translateX(-50%) translateY(4px);
+  background:var(--ink);color:#fff;padding:6px 11px;border-radius:7px;font-size:.75rem;font-weight:600;
+  white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .18s,transform .18s;box-shadow:var(--sh-sm);z-index:9}
+.cq::before{content:"";position:absolute;bottom:calc(100% + 4px);left:50%;transform:translateX(-50%) translateY(4px);
+  border:5px solid transparent;border-top-color:var(--ink);opacity:0;transition:opacity .18s,transform .18s;z-index:9}
+.cq:hover::after,.cq:hover::before{opacity:1;transform:translateX(-50%) translateY(0)}
 
 /* ============================ PARTNERS ============================ */
 .partners{border-block:1px solid var(--line);background:var(--paper-2)}
@@ -417,13 +432,19 @@ footer{border-top:1px solid var(--line);padding-block:44px;background:var(--pape
       </div>
     </div>
     <div class="card-stage rv" style="transition-delay:.15s">
-      <div class="mcard" id="mcard">
-        <div class="mcard-top"><img src="hfca-logo-COvTBys0.png" alt=""><span class="mcard-kicker">Member Benefits</span></div>
-        <div>
-          <div class="mcard-chip"></div>
-          <div class="mcard-title">מרכז ההטבות<br>לחברי ההתאחדות</div>
+      <div class="mcard-wrap">
+        <div class="mcard" id="mcard">
+          <div class="mcard-top"><img src="hfca-logo-COvTBys0.png" alt=""><span class="mcard-kicker">Member Benefits</span></div>
+          <div>
+            <div class="mcard-chip"></div>
+            <div class="mcard-title">מרכז ההטבות<br>לחברי ההתאחדות</div>
+          </div>
+          <div class="mcard-foot"><span>חבר/ת התאחדות</span><span>הוועדה הכלכלית</span></div>
         </div>
-        <div class="mcard-foot"><span>חבר/ת התאחדות</span><span>הוועדה הכלכלית</span></div>
+      </div>
+      <div class="cat-quick-box">
+        <span class="cat-quick-title">סינון מהיר לפי תחום</span>
+        <div class="cat-quick" id="catQuick"></div>
       </div>
     </div>
   </div>
@@ -659,8 +680,13 @@ function renderBenefits(){
   grid.innerHTML=BENEFITS.map(card).join('');
   const counts={};BENEFITS.forEach(b=>counts[b.c]=(counts[b.c]||0)+1);
   let ch=`<button class="chip-f${cat==='all'?' on':''}" data-cat="all">${svg('<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>')}<span>הכל</span><span class="cnt">${BENEFITS.length}</span></button>`;
-  Object.keys(CATS).forEach(c=>{if(counts[c])ch+=`<button class="chip-f${cat===c?' on':''}" data-cat="${c}">${svg(ICON[c])}<span>${CATS[c]}</span><span class="cnt">${counts[c]}</span></button>`;});
+  let cq='';
+  Object.keys(CATS).forEach(c=>{if(counts[c]){
+    ch+=`<button class="chip-f${cat===c?' on':''}" data-cat="${c}">${svg(ICON[c])}<span>${CATS[c]}</span><span class="cnt">${counts[c]}</span></button>`;
+    cq+=`<button class="cq${cat===c?' on':''}" data-cat="${c}" aria-label="${CATS[c]}">${svg(ICON[c])}</button>`;
+  }});
   document.getElementById('chips').innerHTML=ch;
+  document.getElementById('catQuick').innerHTML=cq;
   if(cat!=='all'&&!counts[cat]){cat='all';document.querySelector('.chip-f[data-cat="all"]').classList.add('on');}
   const sb=document.getElementById('statBenefits'),sc=document.getElementById('statCats'),nc=Object.keys(counts).length;
   sb.dataset.count=BENEFITS.length;sb.textContent=BENEFITS.length;
@@ -681,7 +707,13 @@ function filt(){const cs=grid.querySelectorAll('.bcard');let n=0;
   cs.forEach(c=>{const ok=(cat==='all'||c.dataset.cat===cat)&&(!q||c.dataset.s.includes(q));c.style.display=ok?'':'none';if(ok)n++;});
   let e=grid.querySelector('.empty');
   if(!n){if(!e){e=document.createElement('div');e.className='empty';e.innerHTML=svg('<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>')+'<p>לא נמצאו הטבות התואמות את החיפוש.</p>';grid.appendChild(e);}}else if(e)e.remove();}
-document.getElementById('chips').addEventListener('click',e=>{const b=e.target.closest('.chip-f');if(!b)return;document.querySelectorAll('.chip-f').forEach(x=>x.classList.remove('on'));b.classList.add('on');cat=b.dataset.cat;filt();});
+function setCat(c,scroll){cat=c;
+  document.querySelectorAll('.chip-f').forEach(x=>x.classList.toggle('on',x.dataset.cat===c));
+  document.querySelectorAll('.cq').forEach(x=>x.classList.toggle('on',x.dataset.cat===c));
+  filt();
+  if(scroll)document.getElementById('benefits').scrollIntoView({behavior:'smooth'});}
+document.getElementById('chips').addEventListener('click',e=>{const b=e.target.closest('.chip-f');if(!b)return;setCat(b.dataset.cat);});
+document.getElementById('catQuick').addEventListener('click',e=>{const b=e.target.closest('.cq');if(!b)return;setCat(b.dataset.cat,true);});
 document.getElementById('search').addEventListener('input',e=>{q=e.target.value.trim().toLowerCase();filt();});
 
 /* ===== ADMIN ===== */
