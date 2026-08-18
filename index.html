@@ -653,9 +653,9 @@ footer{border-top:1px solid var(--line);padding-block:44px;background:var(--pape
         <button class="iconbtn adm-close" aria-label="סגירה"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
       </div>
       <form id="loginForm" novalidate>
-        <div class="field"><label>אימייל</label><input id="admUser" type="email" autocomplete="username" required placeholder="admin@example.com"></div>
+        <div class="field"><label>שם משתמש</label><input id="admUser" type="text" inputmode="text" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" required placeholder="שם משתמש"></div>
         <div class="field"><label>סיסמה</label><input id="admPass" type="password" autocomplete="current-password" required></div>
-        <p class="admin-err" id="loginErr" hidden>אימייל או סיסמה שגויים</p>
+        <p class="admin-err" id="loginErr" hidden>שם משתמש או סיסמה שגויים</p>
         <button type="submit" class="submit">כניסה</button>
       </form>
     </div>
@@ -810,7 +810,16 @@ const adminEmail=()=>(sbSession&&sbSession.user&&sbSession.user.email)||'admin';
 function saveSession(s){sbSession=s;try{localStorage.setItem(LS_SESSION,JSON.stringify(s));}catch(e){}}
 function clearSession(){sbSession=null;try{localStorage.removeItem(LS_SESSION);}catch(e){}}
 function isLoggedIn(){return !!(sbSession&&sbSession.access_token);}
-async function sbLogin(email,password){
+/* login identifier → account e-mail (username resolved server-side; e-mail accepted as-is) */
+async function resolveLoginEmail(login){
+  const id=String(login||'').trim();
+  if(!id||id.includes('@'))return id;
+  try{const r=await fetch(SB_URL+'/rest/v1/rpc/benefits_hub_admin_email',{method:'POST',
+      headers:sbHeaders(),body:JSON.stringify({p_login:id})});
+    if(r.ok){const mail=await r.json();if(typeof mail==='string'&&mail)return mail;}}catch(e){}
+  return id;}
+async function sbLogin(login,password){
+  const email=await resolveLoginEmail(login);
   const r=await fetch(SB_AUTH+'/token?grant_type=password',{method:'POST',
     headers:{'apikey':SB_KEY,'Content-Type':'application/json'},body:JSON.stringify({email,password})});
   if(!r.ok)throw new Error('login');saveSession(await r.json());return true;}
@@ -986,9 +995,9 @@ addEventListener('keydown',e=>{if(e.key==='Escape'&&!adminOv.hidden)closeAdmin()
 if(location.hash==='#admin')openAdmin();
 
 document.getElementById('loginForm').addEventListener('submit',async e=>{e.preventDefault();
-  const email=document.getElementById('admUser').value.trim(),p=document.getElementById('admPass').value;
+  const user=document.getElementById('admUser').value.trim(),p=document.getElementById('admPass').value;
   const btn=e.target.querySelector('button[type=submit]');btn.disabled=true;
-  try{await sbLogin(email,p);document.getElementById('loginErr').hidden=true;e.target.reset();
+  try{await sbLogin(user,p);document.getElementById('loginErr').hidden=true;e.target.reset();
     showPanel();await ensureSeeded();renderAdmList();}
   catch(err){document.getElementById('loginErr').hidden=false;}
   finally{btn.disabled=false;}});
