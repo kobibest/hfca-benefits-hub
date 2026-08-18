@@ -14,6 +14,14 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Assistant:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<script>
+/* כניסה שמורה — משחרר את מסך הכניסה עוד לפני הציור, כדי שחבר מחובר לא יראה הבזק */
+(function(){try{
+  var m=JSON.parse(localStorage.getItem('hfca-member')||'null');
+  var a=JSON.parse(localStorage.getItem('hfca-admin-session')||'null');
+  if((m&&m.id&&(!m.exp||m.exp>Date.now()))||(a&&a.access_token))document.documentElement.classList.add('member-in');
+}catch(e){}})();
+</script>
 <style>
 /* ============================ TOKENS ============================ */
 :root{
@@ -329,8 +337,51 @@ footer{border-top:1px solid var(--line);padding-block:44px;background:var(--pape
 .foot-l a:hover{color:var(--gold-deep)}
 .copy{text-align:center;font-size:.85rem;color:var(--faint);margin-top:28px;padding-top:24px;border-top:1px solid var(--line)}
 
+/* ============================ MEMBER GATE ============================ */
+html:not(.member-in){overflow:hidden}
+html.member-in .gate{display:none}
+.gate{position:fixed;inset:0;z-index:300;display:flex;align-items:center;justify-content:center;padding:24px;
+  overflow-y:auto;background:linear-gradient(155deg,#20293f 0%,#151d31 55%,#101627 100%)}
+.gate::before{content:"";position:absolute;inset:0;pointer-events:none;
+  background:radial-gradient(900px 460px at 78% 8%,rgba(194,161,90,.16),transparent 62%),
+             radial-gradient(700px 420px at 12% 92%,rgba(194,161,90,.10),transparent 60%)}
+.gate-card{position:relative;width:min(440px,100%);margin-block:auto;background:var(--surface);border:1px solid var(--line);
+  border-radius:var(--r-lg);box-shadow:0 40px 90px -44px rgba(0,0,0,.8);padding:clamp(28px,5vw,42px);text-align:center}
+.gate-logo{height:58px;width:auto;margin:0 auto 18px}
+.gate-card .eyebrow{justify-content:center}
+.gate-card h1{font-size:clamp(1.55rem,4vw,2rem);margin:14px 0 12px}
+.gate-sub{color:var(--muted);font-size:.97rem;margin-bottom:26px}
+.gate-card form{text-align:start}
+.field label .lbl-hint{color:var(--faint);font-weight:500}
+.gate-card .field input{text-align:center;font-size:1.22rem;font-weight:700;letter-spacing:.2em;
+  font-variant-numeric:tabular-nums;padding-block:15px}
+.gate-err{color:#c0392b;font-weight:600;font-size:.9rem;margin-top:13px;text-align:center}
+.gate-card .submit{margin-top:18px}
+.gate-card .submit[disabled]{opacity:.7;cursor:progress;transform:none}
+.gate-spin{width:18px;height:18px;border-radius:50%;border:2px solid rgba(255,255,255,.35);border-top-color:#fff;
+  animation:gspin .7s linear infinite}
+@keyframes gspin{to{transform:rotate(360deg)}}
+.gate-note{color:var(--faint);font-size:.83rem;margin-top:22px;line-height:1.6}
+.gate-foot{display:flex;align-items:center;justify-content:center;gap:10px;margin-top:18px;padding-top:18px;
+  border-top:1px solid var(--line);font-size:.86rem;color:var(--muted);font-weight:500}
+.gate-foot a{transition:color .2s}
+.gate-foot a:hover{color:var(--gold-deep)}
+@media(prefers-reduced-motion:reduce){.gate-spin{animation-duration:2.4s}}
+
+/* member chip (nav) */
+.member-chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line-2);background:var(--surface);
+  border-radius:var(--r-sm);padding:5px 5px 5px 12px;font-size:.85rem;font-weight:600;color:var(--muted)}
+.member-chip[hidden]{display:none}
+.member-chip .mc-label,.member-chip .mc-id{white-space:nowrap}
+.member-chip .mc-id{font-variant-numeric:tabular-nums;letter-spacing:.02em}
+.member-chip .mc-out{width:32px;height:32px;border-radius:7px;display:grid;place-items:center;color:var(--muted);
+  border:1px solid transparent;transition:color .2s,border-color .2s}
+.member-chip .mc-out svg{width:16px;height:16px}
+.member-chip .mc-out:hover{color:#c0392b;border-color:color-mix(in srgb,#c0392b 40%,transparent)}
+@media(max-width:900px){.member-chip{padding:5px}.member-chip .mc-label,.member-chip .mc-id{display:none}}
+
 /* ============================ ADMIN ============================ */
-.admin-ov{position:fixed;inset:0;z-index:200;display:flex;align-items:flex-start;justify-content:center;
+.admin-ov{position:fixed;inset:0;z-index:320;display:flex;align-items:flex-start;justify-content:center;
   padding:24px;overflow-y:auto;background:rgba(21,29,49,.5);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
 .admin-ov[hidden]{display:none}
 .admin-box{width:min(920px,100%);margin-block:auto;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);
@@ -474,6 +525,34 @@ footer{border-top:1px solid var(--line);padding-block:44px;background:var(--pape
 </head>
 <body>
 
+<!-- ===== MEMBER GATE — כניסה לאתר בתעודת זהות ===== -->
+<div class="gate" id="gate" role="dialog" aria-modal="true" aria-labelledby="gateTitle">
+  <div class="gate-card">
+    <img class="gate-logo" src="hfca-logo-COvTBys0.png" alt="לוגו התאחדות יועצי המשכנתאות">
+    <span class="eyebrow">מרכז ההטבות לחברים</span>
+    <h1 id="gateTitle">כניסה לחברי ההתאחדות</h1>
+    <p class="gate-sub">מרכז ההטבות פתוח לחברי התאחדות יועצי המשכנתאות בלבד. הזינו את מספר תעודת הזהות שלכם כדי להיכנס.</p>
+    <form id="gateForm" novalidate>
+      <div class="field">
+        <label for="gateId">תעודת זהות <span class="lbl-hint">(9 ספרות)</span></label>
+        <input id="gateId" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="9" required
+               autocomplete="off" autocorrect="off" spellcheck="false" dir="ltr" aria-describedby="gateErr">
+      </div>
+      <p class="gate-err" id="gateErr" hidden></p>
+      <button type="submit" class="submit" id="gateSubmit">
+        <span id="gateSubmitLabel">כניסה לאתר</span>
+        <svg id="gateSubmitIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><path d="m10 17 5-5-5-5M15 12H3"/></svg>
+      </button>
+    </form>
+    <p class="gate-note">הכניסה מיועדת לחברי ההתאחדות בלבד. אם תעודת הזהות שלכם אינה מזוהה — פנו למזכירות ההתאחדות לעדכון פרטי החברות.</p>
+    <div class="gate-foot">
+      <a href="https://hfca.org.il/" target="_blank" rel="noopener">אתר ההתאחדות</a>
+      <span aria-hidden="true">·</span>
+      <a href="#admin" id="gateAdminLink">כניסת מנהל</a>
+    </div>
+  </div>
+</div>
+
 <!-- ===== NAV ===== -->
 <header class="nav" id="nav">
   <div class="nav-inner">
@@ -488,6 +567,10 @@ footer{border-top:1px solid var(--line);padding-block:44px;background:var(--pape
       <a href="#suggest">הצעת הטבה</a>
     </nav>
     <div class="nav-right">
+      <div class="member-chip" id="memberChip" hidden>
+        <span class="mc-label" id="memberChipLabel"></span><span class="mc-id" id="memberChipId" dir="ltr"></span>
+        <button type="button" class="mc-out" id="memberOut" aria-label="יציאה מהאתר" title="יציאה מהאתר"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5M21 12H9"/></svg></button>
+      </div>
       <a href="#contact" class="nav-cta">צור קשר</a>
       <button class="iconbtn burger" id="burger" aria-label="תפריט"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button>
     </div>
@@ -978,6 +1061,122 @@ addEventListener('keydown',e=>{if(e.key==='Escape'&&!bdOv.hidden)closeBenefit();
 addEventListener('hashchange',syncBenefitHash);
 syncBenefitHash();
 
+/* ===== MEMBER GATE — כניסה לאתר בתעודת זהות ===== */
+/* ---------------------------------------------------------------------------
+   נקודת החיבור ל-API של ההתאחדות.
+   כל עוד MEMBER_API.url ריק — האתר עובד במצב זמני ומאשר רק את תעודות הזהות
+   שברשימת TEMP_ALLOWED_IDS. ברגע שממלאים כאן כתובת אמיתית, הבדיקה עוברת
+   אוטומטית לשרת ואין צורך בשינוי נוסף בקוד (אפשר גם למחוק אז את הרשימה הזמנית).
+   --------------------------------------------------------------------------- */
+const MEMBER_API={
+  url:'',                 /* לדוגמה: 'https://api.hfca.org.il/members/verify' */
+  method:'POST',          /* 'POST' או 'GET' */
+  key:'',                 /* אופציונלי — יישלח בכותרת x-api-key */
+  idParam:'id',           /* שם השדה שבו נשלחת תעודת הזהות */
+  /* תרגום תשובת השרת ל-{ok,name}. להתאים לפורמט האמיתי בזמן החיבור. */
+  parse:(data,res)=>{
+    const d=data||{};
+    const flag=[d.ok,d.valid,d.is_member,d.isMember,d.exists,d.active].find(v=>typeof v==='boolean');
+    return {ok:res.ok&&(flag===undefined?true:flag),
+            name:String(d.name||d.full_name||d.fullName||d.member_name||'')};
+  }
+};
+/* ת"ז לבדיקה — פעיל רק כל עוד לא חובר ה-API */
+const TEMP_ALLOWED_IDS=['123456789'];
+
+const LS_MEMBER='hfca-member';
+const MEMBER_TTL_DAYS=30;
+const normId=v=>String(v==null?'':v).replace(/\D/g,'');
+const maskId=v=>{const d=normId(v);return d.length>4?'•'.repeat(d.length-4)+d.slice(-4):d;};
+
+function readMember(){
+  try{const m=JSON.parse(localStorage.getItem('hfca-member')||'null');
+    if(m&&m.id&&(!m.exp||m.exp>Date.now()))return m;
+    if(m)localStorage.removeItem('hfca-member');}catch(e){}
+  return null;}
+function saveMember(id,name){
+  const m={id:normId(id),name:name||'',exp:Date.now()+MEMBER_TTL_DAYS*864e5};
+  try{localStorage.setItem(LS_MEMBER,JSON.stringify(m));}catch(e){}
+  return m;}
+function clearMember(){try{localStorage.removeItem(LS_MEMBER);}catch(e){}}
+function memberHasAccess(){return !!readMember()||isLoggedIn();}
+
+/* בדיקת חברות מול ה-API (או מול הרשימה הזמנית כל עוד אין API).
+   מחזיר {ok,name}; זורק שגיאה רק כשה-API עצמו אינו זמין. */
+async function verifyMemberId(id){
+  const digits=normId(id);
+  if(!MEMBER_API.url)return TEMP_ALLOWED_IDS.includes(digits)?{ok:true,name:''}:{ok:false,name:''};
+  const isGet=String(MEMBER_API.method||'POST').toUpperCase()==='GET';
+  const headers={'Content-Type':'application/json','Accept':'application/json'};
+  if(MEMBER_API.key)headers['x-api-key']=MEMBER_API.key;
+  const url=isGet
+    ?MEMBER_API.url+(MEMBER_API.url.includes('?')?'&':'?')+encodeURIComponent(MEMBER_API.idParam)+'='+encodeURIComponent(digits)
+    :MEMBER_API.url;
+  const res=await fetch(url,isGet?{headers}:{method:'POST',headers,body:JSON.stringify({[MEMBER_API.idParam]:digits})});
+  if(res.status===404)return {ok:false,name:''};      /* אינו חבר — לא שגיאת מערכת */
+  let data=null;try{data=await res.json();}catch(e){}
+  if(!res.ok)throw new Error('member-api');
+  return MEMBER_API.parse(data,res);}
+
+/* מצב מסך הכניסה והתג בתפריט מסונכרנים תמיד מול מצב הכניסה בפועל */
+function syncGate(){
+  const inSite=memberHasAccess(),m=readMember();
+  document.documentElement.classList.toggle('member-in',inSite);
+  const chip=document.getElementById('memberChip'),chipId=document.getElementById('memberChipId');
+  const chipLabel=document.getElementById('memberChipLabel');
+  if(chip){chip.hidden=!m;
+    if(m){if(chipLabel)chipLabel.textContent=(m.name?m.name+' · ':'')+'ת.ז.';
+          if(chipId)chipId.textContent=maskId(m.id);}}
+  if(!inSite){const f=document.getElementById('gateId'),ov=document.getElementById('adminOv');
+    if(f&&ov&&ov.hidden)f.focus();}}
+
+const gateForm=document.getElementById('gateForm'),gateId=document.getElementById('gateId'),
+      gateErr=document.getElementById('gateErr'),gateSubmit=document.getElementById('gateSubmit'),
+      gateSubmitLabel=document.getElementById('gateSubmitLabel'),gateSubmitIcon=document.getElementById('gateSubmitIcon');
+const gateFail=msg=>{gateErr.textContent=msg;gateErr.hidden=false;gateId.focus();gateId.select();};
+function gateBusy(on){
+  gateSubmit.disabled=on;
+  gateSubmitLabel.textContent=on?'בודק…':'כניסה לאתר';
+  gateSubmitIcon.style.display=on?'none':'';
+  let sp=gateSubmit.querySelector('.gate-spin');
+  if(on&&!sp){sp=document.createElement('span');sp.className='gate-spin';gateSubmit.appendChild(sp);}
+  else if(!on&&sp)sp.remove();}
+
+/* ספרות בלבד בשדה, בלי לשבור הדבקה */
+gateId.addEventListener('input',()=>{const c=normId(gateId.value);if(gateId.value!==c)gateId.value=c;
+  if(!gateErr.hidden)gateErr.hidden=true;});
+
+gateForm.addEventListener('submit',async e=>{
+  e.preventDefault();
+  const id=normId(gateId.value);
+  if(id.length!==9){gateFail('יש להזין תעודת זהות תקינה — 9 ספרות.');return;}
+  gateBusy(true);
+  try{
+    const r=await verifyMemberId(id);
+    if(!r||!r.ok){gateFail('תעודת הזהות אינה מופיעה ברשימת חברי ההתאחדות.');return;}
+    saveMember(id,r.name);
+    gateErr.hidden=true;gateForm.reset();
+    syncGate();
+    if(location.hash==='#admin')openAdmin();
+  }catch(err){
+    gateFail('שגיאה זמנית בבדיקת החברות. נסו שוב בעוד רגע.');
+  }finally{gateBusy(false);}});
+
+document.getElementById('memberOut').addEventListener('click',()=>{
+  clearMember();
+  if(isLoggedIn()){syncGate();return;}   /* מנהל מחובר נשאר בפנים */
+  gateId.value='';gateErr.hidden=true;syncGate();scrollTo(0,0);});
+
+/* כניסת מנהל ישירות ממסך הכניסה */
+document.getElementById('gateAdminLink').addEventListener('click',e=>{e.preventDefault();openAdmin();});
+
+/* כל עוד מסך הכניסה פתוח — המיקוד לא בורח לתוכן שמאחוריו */
+document.addEventListener('focusin',e=>{
+  if(memberHasAccess())return;
+  const ov=document.getElementById('adminOv');
+  if(ov&&!ov.hidden)return;
+  if(!document.getElementById('gate').contains(e.target))gateId.focus();});
+
 /* ===== ADMIN (auth via Supabase) ===== */
 const adminOv=document.getElementById('adminOv'),adminLogin=document.getElementById('adminLogin'),adminPanel=document.getElementById('adminPanel');
 const admList=document.getElementById('admList'),benForm=document.getElementById('benForm');
@@ -987,12 +1186,13 @@ function openAdmin(){adminOv.hidden=false;document.body.style.overflow='hidden';
   else{adminLogin.hidden=false;adminPanel.hidden=true;document.getElementById('admUser').focus();}}
 function closeAdmin(){adminOv.hidden=true;document.body.style.overflow='';
   if(location.hash==='#admin')history.replaceState(null,'',location.pathname+location.search);}
-function showPanel(){adminLogin.hidden=true;adminPanel.hidden=false;resetBenForm();switchAdminView('benefits');renderAdmList();loadViewCounts();}
+function showPanel(){adminLogin.hidden=true;adminPanel.hidden=false;resetBenForm();switchAdminView('benefits');renderAdmList();loadViewCounts();syncGate();}
 document.getElementById('adminLink').addEventListener('click',e=>{e.preventDefault();openAdmin();});
 document.querySelectorAll('.adm-close').forEach(b=>b.addEventListener('click',closeAdmin));
 adminOv.addEventListener('click',e=>{if(e.target===adminOv)closeAdmin();});
 addEventListener('keydown',e=>{if(e.key==='Escape'&&!adminOv.hidden)closeAdmin();});
 if(location.hash==='#admin')openAdmin();
+syncGate();
 
 document.getElementById('loginForm').addEventListener('submit',async e=>{e.preventDefault();
   const user=document.getElementById('admUser').value.trim(),p=document.getElementById('admPass').value;
@@ -1001,7 +1201,7 @@ document.getElementById('loginForm').addEventListener('submit',async e=>{e.preve
     showPanel();await ensureSeeded();renderAdmList();}
   catch(err){document.getElementById('loginErr').hidden=false;}
   finally{btn.disabled=false;}});
-document.getElementById('admLogout').addEventListener('click',async()=>{await sbLogout();adminPanel.hidden=true;adminLogin.hidden=false;});
+document.getElementById('admLogout').addEventListener('click',async()=>{await sbLogout();adminPanel.hidden=true;adminLogin.hidden=false;syncGate();});
 document.getElementById('admReset').addEventListener('click',async()=>{
   if(!isLoggedIn())return;
   if(!confirm('לשחזר את רשימת ההטבות המקורית? כל השינויים שבוצעו יימחקו.'))return;
