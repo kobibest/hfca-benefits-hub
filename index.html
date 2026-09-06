@@ -1202,9 +1202,11 @@ function syncGate(){
   document.documentElement.classList.toggle('member-in',inSite);
   const chip=document.getElementById('memberChip'),chipId=document.getElementById('memberChipId');
   const chipLabel=document.getElementById('memberChipLabel');
-  if(chip){chip.hidden=!m;
-    if(m){if(chipLabel)chipLabel.textContent=(m.name?m.name+' · ':'')+'ת.ז.';
-          if(chipId)chipId.textContent=maskId(m.id);}}
+  /* התג מוצג בכל מצב שבו נמצאים בפנים — גם כשהגישה מגיעה מ-session של מנהל,
+     אחרת נשארים באתר בלי שום כפתור יציאה */
+  if(chip){chip.hidden=!inSite;
+    if(inSite){if(chipLabel)chipLabel.textContent=m?((m.name?m.name+' · ':'')+'ת.ז.'):'מנהל';
+               if(chipId)chipId.textContent=m?maskId(m.id):'';}}
   if(!inSite){const f=document.getElementById('gateId'),ov=document.getElementById('adminOv');
     if(f&&ov&&ov.hidden)f.focus();}}
 
@@ -1244,9 +1246,12 @@ gateForm.addEventListener('submit',async e=>{
     gateFail('שגיאה זמנית בבדיקת החברות. נסו שוב בעוד רגע.');
   }finally{gateBusy(false);}});
 
-document.getElementById('memberOut').addEventListener('click',()=>{
+document.getElementById('memberOut').addEventListener('click',async e=>{
+  const btn=e.currentTarget;btn.disabled=true;
   clearMember();
-  if(isLoggedIn()){syncGate();return;}   /* מנהל מחובר נשאר בפנים */
+  if(isLoggedIn())await sbLogout();      /* יציאה אחת מוציאה גם ממצב ניהול */
+  btn.disabled=false;
+  const ov=document.getElementById('adminOv');if(ov&&!ov.hidden)closeAdmin();
   gateId.value='';gateErr.hidden=true;syncGate();scrollTo(0,0);});
 
 /* כניסת מנהל ישירות ממסך הכניסה */
