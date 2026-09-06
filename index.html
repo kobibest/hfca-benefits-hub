@@ -1063,27 +1063,17 @@ syncBenefitHash();
 
 /* ===== MEMBER GATE — כניסה לאתר בתעודת זהות ===== */
 /* ---------------------------------------------------------------------------
-   נקודת החיבור ל-API של ההתאחדות.
-   כל עוד MEMBER_API.url ריק — האתר עובד במצב זמני ומאשר רק את תעודות הזהות
-   שברשימת TEMP_ALLOWED_IDS. ברגע שממלאים כאן כתובת אמיתית, הבדיקה עוברת
-   אוטומטית לשרת ואין צורך בשינוי נוסף בקוד (אפשר גם למחוק אז את הרשימה הזמנית).
-   --------------------------------------------------------------------------- */
-const MEMBER_API={
-  url:'',                 /* לדוגמה: 'https://api.hfca.org.il/members/verify' */
-  method:'POST',          /* 'POST' או 'GET' */
-  key:'',                 /* אופציונלי — יישלח בכותרת x-api-key */
-  idParam:'id',           /* שם השדה שבו נשלחת תעודת הזהות */
-  /* תרגום תשובת השרת ל-{ok,name}. להתאים לפורמט האמיתי בזמן החיבור. */
-  parse:(data,res)=>{
-    const d=data||{};
-    const flag=[d.ok,d.valid,d.is_member,d.isMember,d.exists,d.active].find(v=>typeof v==='boolean');
-    return {ok:res.ok&&(flag===undefined?true:flag),
-            name:String(d.name||d.full_name||d.fullName||d.member_name||'')};
-  }
-};
-/* ת"ז לבדיקה — פעיל רק כל עוד לא חובר ה-API */
-const TEMP_ALLOWED_IDS=['123456789'];
+   האימות רץ בצד השרת, מול טבלת advisors שבאותו פרויקט Supabase, דרך פונקציית
+   RPC בשם benefits_hub_verify_member (SECURITY DEFINER). הפונקציה מחזירה
+   {ok,name,reason} בלבד — טבלת החברים עצמה לא נחשפת לדפדפן.
 
+   הפונקציה מאשרת רק חבר בסטטוס active_member, ומנרמלת את שני הצדדים
+   (ספרות בלבד + ריפוד אפסים ל-9) — בבסיס הנתונים חלק מהמספרים נשמרו בלי
+   האפס המוביל, ובלעדי הנרמול הם לא היו נמצאים.
+   reason אפשריים: not_found (אינו חבר פעיל) · invalid (קלט לא תקין) ·
+   rate_limited (יותר מדי ניסיונות כושלים מאותה כתובת בשעה האחרונה).
+   --------------------------------------------------------------------------- */
+const MEMBER_RPC='benefits_hub_verify_member';
 const LS_MEMBER='hfca-member';
 const MEMBER_TTL_DAYS=30;
 const normId=v=>String(v==null?'':v).replace(/\D/g,'');
@@ -1101,22 +1091,13 @@ function saveMember(id,name){
 function clearMember(){try{localStorage.removeItem(LS_MEMBER);}catch(e){}}
 function memberHasAccess(){return !!readMember()||isLoggedIn();}
 
-/* בדיקת חברות מול ה-API (או מול הרשימה הזמנית כל עוד אין API).
-   מחזיר {ok,name}; זורק שגיאה רק כשה-API עצמו אינו זמין. */
+/* מחזיר {ok,name,reason}; זורק שגיאה רק כשהשרת עצמו אינו זמין */
 async function verifyMemberId(id){
-  const digits=normId(id);
-  if(!MEMBER_API.url)return TEMP_ALLOWED_IDS.includes(digits)?{ok:true,name:''}:{ok:false,name:''};
-  const isGet=String(MEMBER_API.method||'POST').toUpperCase()==='GET';
-  const headers={'Content-Type':'application/json','Accept':'application/json'};
-  if(MEMBER_API.key)headers['x-api-key']=MEMBER_API.key;
-  const url=isGet
-    ?MEMBER_API.url+(MEMBER_API.url.includes('?')?'&':'?')+encodeURIComponent(MEMBER_API.idParam)+'='+encodeURIComponent(digits)
-    :MEMBER_API.url;
-  const res=await fetch(url,isGet?{headers}:{method:'POST',headers,body:JSON.stringify({[MEMBER_API.idParam]:digits})});
-  if(res.status===404)return {ok:false,name:''};      /* אינו חבר — לא שגיאת מערכת */
-  let data=null;try{data=await res.json();}catch(e){}
-  if(!res.ok)throw new Error('member-api');
-  return MEMBER_API.parse(data,res);}
+  const res=await fetch(SB_URL+'/rest/v1/rpc/'+MEMBER_RPC,
+    {method:'POST',headers:sbHeaders(),body:JSON.stringify({p_id:normId(id)})});
+  if(!res.ok)throw new Error('member-rpc');
+  const d=await res.json()||{};
+  return {ok:!!d.ok,name:String(d.name||''),reason:String(d.reason||'')};}
 
 /* מצב מסך הכניסה והתג בתפריט מסונכרנים תמיד מול מצב הכניסה בפועל */
 function syncGate(){
@@ -1149,11 +1130,15 @@ gateId.addEventListener('input',()=>{const c=normId(gateId.value);if(gateId.valu
 gateForm.addEventListener('submit',async e=>{
   e.preventDefault();
   const id=normId(gateId.value);
-  if(id.length!==9){gateFail('יש להזין תעודת זהות תקינה — 9 ספרות.');return;}
+  if(id.length<8||id.length>9){gateFail('יש להזין תעודת זהות תקינה — 9 ספרות.');return;}
   gateBusy(true);
   try{
     const r=await verifyMemberId(id);
-    if(!r||!r.ok){gateFail('תעודת הזהות אינה מופיעה ברשימת חברי ההתאחדות.');return;}
+    if(!r||!r.ok){
+      gateFail(r&&r.reason==='rate_limited'
+        ?'יותר מדי ניסיונות כושלים. נסו שוב בעוד שעה או פנו למזכירות ההתאחדות.'
+        :'תעודת הזהות אינה מופיעה ברשימת החברים הפעילים של ההתאחדות.');
+      return;}
     saveMember(id,r.name);
     gateErr.hidden=true;gateForm.reset();
     syncGate();
