@@ -1159,17 +1159,18 @@ syncBenefitHash();
 
 /* ===== MEMBER GATE — כניסה לאתר בתעודת זהות ===== */
 /* ---------------------------------------------------------------------------
-   האימות רץ בצד השרת, מול טבלת advisors שבאותו פרויקט Supabase, דרך פונקציית
-   RPC בשם benefits_hub_verify_member (SECURITY DEFINER). הפונקציה מחזירה
-   {ok,name,reason} בלבד — טבלת החברים עצמה לא נחשפת לדפדפן.
+   רשימת החברים חיה בפרויקט Supabase אחר (HFCA — מערכת ההתאחדות), בטבלת advisors.
+   האתר הזה לא מחזיק שום מפתח לפרויקט ההוא: הבדיקה עוברת דרך Edge Function
+   ציבורית בשם verify-member שרצה שם, ומחזירה {ok,name,reason} בלבד. היא זו
+   שקוראת לפונקציית benefits_hub_verify_member עם הרשאת service role — כך
+   שטבלת החברים, ומפתחות הפרויקט של ההתאחדות, לעולם לא מגיעים לדפדפן.
 
-   הפונקציה מאשרת רק חבר בסטטוס active_member, ומנרמלת את שני הצדדים
-   (ספרות בלבד + ריפוד אפסים ל-9) — בבסיס הנתונים חלק מהמספרים נשמרו בלי
-   האפס המוביל, ובלעדי הנרמול הם לא היו נמצאים.
+   מאושר רק חבר בסטטוס active_member. שני הצדדים מנורמלים (ספרות בלבד + ריפוד
+   אפסים ל-9), כי חלק מהמספרים נשמרו במסד בלי האפס המוביל.
    reason אפשריים: not_found (אינו חבר פעיל) · invalid (קלט לא תקין) ·
    rate_limited (יותר מדי ניסיונות כושלים מאותה כתובת בשעה האחרונה).
    --------------------------------------------------------------------------- */
-const MEMBER_RPC='benefits_hub_verify_member';
+const MEMBER_VERIFY_URL='https://ekpkmqczjplamtadvqgv.supabase.co/functions/v1/verify-member';
 const LS_MEMBER='hfca-member';
 const MEMBER_TTL_DAYS=30;
 const normId=v=>String(v==null?'':v).replace(/\D/g,'');
@@ -1189,9 +1190,9 @@ function memberHasAccess(){return !!readMember()||isLoggedIn();}
 
 /* מחזיר {ok,name,reason}; זורק שגיאה רק כשהשרת עצמו אינו זמין */
 async function verifyMemberId(id){
-  const res=await fetch(SB_URL+'/rest/v1/rpc/'+MEMBER_RPC,
-    {method:'POST',headers:sbHeaders(),body:JSON.stringify({p_id:normId(id)})});
-  if(!res.ok)throw new Error('member-rpc');
+  const res=await fetch(MEMBER_VERIFY_URL,{method:'POST',
+    headers:{'Content-Type':'application/json'},body:JSON.stringify({id:normId(id)})});
+  if(!res.ok)throw new Error('member-verify');
   const d=await res.json()||{};
   return {ok:!!d.ok,name:String(d.name||''),reason:String(d.reason||'')};}
 
