@@ -412,6 +412,16 @@ html.member-in .gate{display:none}
 .adm-form .field{margin-bottom:12px}
 .adm-form textarea{min-height:84px}
 .adm-form-btns{display:flex;gap:10px;align-items:center}
+.adm-form input[type=file]{padding:10px 12px;font-size:.86rem;cursor:pointer}
+.bf-file{display:flex;align-items:center;gap:9px;padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+.bf-file[hidden]{display:none}
+.bf-file svg{width:16px;height:16px;color:var(--sky-ink);flex-shrink:0}
+.bf-file a{flex:1;min-width:0;font-size:.85rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--ink)}
+.bf-file a:hover{color:var(--gold-deep)}
+.bf-file .rm{border:1px solid var(--line-2);background:var(--paper);color:var(--muted);border-radius:8px;
+  padding:5px 10px;font-size:.78rem;font-weight:700;cursor:pointer;transition:all .2s}
+.bf-file .rm:hover{color:#c0392b;border-color:#c0392b}
+.bf-hint{font-size:.78rem;color:var(--faint);font-weight:600}
 .adm-form-btns .submit{margin-top:0;flex:1;padding:13px}
 @media(max-width:760px){.admin-cols{grid-template-columns:1fr}.adm-list{max-height:300px}}
 
@@ -440,12 +450,34 @@ html.member-in .gate{display:none}
   border:1px solid color-mix(in srgb,var(--sky) 26%,transparent);padding:3px 10px;border-radius:var(--r-pill);
   display:inline-flex;align-items:center;gap:4px;flex-shrink:0}
 .adm-item .views-badge svg{width:13px;height:13px}
+.adm-item .file-badge{flex-shrink:0;display:grid;place-items:center;width:26px;height:26px;border-radius:8px;
+  color:var(--sky-ink);background:color-mix(in srgb,var(--sky) 14%,transparent)}
+.adm-item .file-badge svg{width:14px;height:14px}
 .adm-empty{padding:34px 16px;text-align:center;color:var(--muted);font-weight:600}
 
 /* ============================ BENEFIT DETAIL PAGE ============================ */
 .bcard{cursor:pointer}
 .act.more{border-color:color-mix(in srgb,var(--gold) 42%,transparent);color:var(--gold)}
 .act.more:hover{background:color-mix(in srgb,var(--gold) 10%,transparent);border-color:var(--gold);color:var(--gold)}
+.act.file{color:var(--sky-ink);border-color:color-mix(in srgb,var(--sky) 45%,transparent)}
+.act.file:hover{background:color-mix(in srgb,var(--sky) 10%,transparent);border-color:var(--sky-ink);color:var(--sky-ink)}
+
+/* attached file — benefit detail */
+.bd-file{position:relative;z-index:1;display:flex;align-items:center;gap:14px;padding:15px 18px;border-radius:12px;
+  border:1px solid color-mix(in srgb,var(--sky) 42%,transparent);background:color-mix(in srgb,var(--sky) 8%,transparent);
+  color:var(--ink);font-weight:600;transition:transform .2s,border-color .2s,background .2s}
+.bd-file:hover{border-color:var(--sky-ink);transform:translateX(-4px)}
+.bd-file .bic{width:24px;height:24px;flex-shrink:0;display:grid;place-items:center;color:var(--sky-ink)}
+.bd-file .bic svg{width:22px;height:22px}
+.bd-file .fmeta{min-width:0}
+.bd-file .fmeta b{display:block;font-size:1rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bd-file .fmeta span{font-size:.82rem;color:var(--muted);font-weight:600}
+.bd-file .arr{margin-inline-start:auto;opacity:.5;transition:transform .2s,opacity .2s}
+.bd-file .arr svg{width:18px;height:18px}
+.bd-file:hover .arr{opacity:1;transform:translateY(3px)}
+.bd-fileblock{position:relative;z-index:1;margin-bottom:28px}
+.bd-thumb{position:relative;z-index:1;margin-top:12px;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--paper)}
+.bd-thumb img{display:block;width:100%;max-height:340px;object-fit:contain;background:var(--paper)}
 .bd-ov{position:fixed;inset:0;z-index:210;display:flex;align-items:flex-start;justify-content:center;padding:24px;overflow-y:auto;
   background:rgba(21,29,49,.5);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);opacity:0;transition:opacity .3s}
 .bd-ov[hidden]{display:none}
@@ -770,6 +802,16 @@ html.member-in .gate{display:none}
             <div class="field"><label>שורת ההטבה <span class="req">*</span></label><input id="bfTag" required placeholder="לדוגמה: 15% הנחה לחברי ההתאחדות"></div>
             <div class="field"><label>תיאור</label><textarea id="bfDesc" placeholder="תיאור קצר של ההטבה…"></textarea></div>
             <div class="field"><label>קישורים — שורה לכל קישור: כיתוב | כתובת</label><textarea id="bfActs" placeholder="הצטרפות באתר | https://example.com&#10;טלפון | tel:03-1234567"></textarea></div>
+            <div class="field">
+              <label>קובץ מצורף — תמונה או PDF</label>
+              <div class="bf-file" id="bfFileCur" hidden>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/></svg>
+                <a id="bfFileLink" href="#" target="_blank" rel="noopener">קובץ</a>
+                <button type="button" class="rm" id="bfFileRm">הסרה</button>
+              </div>
+              <input id="bfFile" type="file" accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml,application/pdf">
+              <span class="bf-hint" id="bfFileHint">תמונה (PNG/JPG/WEBP/GIF/SVG) או PDF, עד 10MB. החברים יוכלו להוריד את הקובץ מכרטיס ההטבה.</span>
+            </div>
             <div class="adm-form-btns"><button type="submit" class="submit">שמירה</button><button type="button" class="mini" id="bfCancel">ניקוי</button></div>
           </form>
         </div>
@@ -820,7 +862,10 @@ const ICON={
 const BI={web:'<path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>',
   phone:'<path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>',
   mail:'<rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>',
-  pdf:'<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8M16 13H8M16 17H8"/>'};
+  pdf:'<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8M16 13H8M16 17H8"/>',
+  img:'<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-4.35-4.35a2 2 0 0 0-2.83 0L3 21"/>',
+  download:'<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/>',
+  paperclip:'<path d="M21.44 11.05 12.25 20.24a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/>'};
 const WA='M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893A11.821 11.821 0 0 0 20.464 3.488';
 const CATS={credit:'כרטיסי אשראי ופיננסים',banking:'בנקאות ועסקים',car:'רכב וליסינג',systems:'מערכות וכלים',marketing:'שיווק ומיתוג',insurance:'ביטוחים',leisure:'נופש ופנאי',professional:'שירותים מקצועיים'};
 const CAT_SHORT={credit:'אשראי',banking:'בנקאות',car:'רכב',systems:'מערכות',marketing:'שיווק',insurance:'ביטוח',leisure:'נופש',professional:'מקצועי'};
@@ -864,6 +909,11 @@ function actHtml(b){const t=bt(b.h);let ic,cls='act';
   if(t==='web')cls+=' primary';
   const ext=t==='web'?' target="_blank" rel="noopener"':'';
   return `<a class="${cls}" href="${esc(b.h)}"${ext} aria-label="${esc(b.t)}">${ic}</a>`;}
+function fileActHtml(f){
+  if(!f||!f.url)return '';
+  /* kept short — .act renders aria-label as a single-line tooltip */
+  const lb='הורדת '+(isPdfFile(f)?'המסמך המצורף':isImageFile(f)?'התמונה המצורפת':'הקובץ המצורף');
+  return `<a class="act file" href="${esc(fileDownloadUrl(f))}" download="${esc(f.name||'')}" aria-label="${esc(lb)}">${svg(BI.download)}</a>`;}
 function card(b,i){
   const badge=b.badge==='pop'?`<span class="badge pop">${svg('<polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>',1)}פופולרי</span>`:b.badge==='new'?`<span class="badge new">חדש</span>`:'';
   const more=`<button type="button" class="act more" data-details="${i}" aria-label="פרטים מלאים">${svg('<circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/>')}</button>`;
@@ -876,12 +926,12 @@ function card(b,i){
       <h3 class="bc-name">${esc(b.n)}</h3>
       <div class="bc-tag">${svg('<circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/>')}<span>${esc(b.tag)}</span></div>
       <p class="bc-desc">${esc(b.d)}</p>
-      <div class="bc-acts">${more}${(b.a||[]).map(actHtml).join('')}</div>
+      <div class="bc-acts">${more}${fileActHtml(b.f)}${(b.a||[]).map(actHtml).join('')}</div>
     </div></article>`;}
 
 /* ===== SUPABASE — view tracking + change log ===== */
-const SB_URL='https://ekpkmqczjplamtadvqgv.supabase.co';
-const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVrcGttcWN6anBsYW10YWR2cWd2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwMzM2MjksImV4cCI6MjA5NjYwOTYyOX0.D2I5PE-Zl6b_mOIsRfwVo7C8qsLeen1Fbk4-62hpDJM';
+const SB_URL='https://kshmxhkdysuhxyigsett.supabase.co';
+const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtzaG14aGtkeXN1aHh5aWdzZXR0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcwNDc5NTMsImV4cCI6MjEwMjYyMzk1M30.uj97XJtwKjBhi62qWUTIX2-8HRaqwE_hWsaDrAf9vhs';
 const sbHeaders=()=>({'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json'});
 const benefitKey=b=>String((b&&(b.id||b.n))||'').trim();
 
@@ -921,8 +971,12 @@ async function authFetch(url,opts){opts=opts||{};
   let r=await go();if(r.status===401&&await sbRefresh())r=await go();return r;}
 
 /* ----- Benefits data layer (Supabase) ----- */
-const rowToBenefit=x=>({id:x.id,n:x.name,c:x.category,badge:x.badge||'',tag:x.tag,d:x.description||'',a:Array.isArray(x.actions)?x.actions:[]});
-const benefitToRow=(b,order)=>{const r={name:b.n,category:b.c,badge:b.badge||null,tag:b.tag,description:b.d||'',actions:b.a||[]};if(order!=null)r.sort_order=order;return r;};
+const rowToBenefit=x=>({id:x.id,n:x.name,c:x.category,badge:x.badge||'',tag:x.tag,d:x.description||'',a:Array.isArray(x.actions)?x.actions:[],
+  f:x.file_url?{url:x.file_url,name:x.file_name||'',path:x.file_path||'',type:x.file_type||''}:null});
+const benefitToRow=(b,order)=>{const r={name:b.n,category:b.c,badge:b.badge||null,tag:b.tag,description:b.d||'',actions:b.a||[],
+  file_url:b.f&&b.f.url?b.f.url:null,file_name:b.f&&b.f.url?(b.f.name||null):null,
+  file_path:b.f&&b.f.url?(b.f.path||null):null,file_type:b.f&&b.f.url?(b.f.type||null):null};
+  if(order!=null)r.sort_order=order;return r;};
 async function fetchBenefits(){
   const r=await fetch(SB_URL+'/rest/v1/benefits_hub_benefits?select=*&order=sort_order.asc,created_at.asc',{headers:sbHeaders()});
   if(!r.ok)throw new Error('benefits');return (await r.json()).map(rowToBenefit);}
@@ -945,6 +999,36 @@ async function deleteBenefit(id){
 async function resetBenefitsToDefaults(){
   const del=await authFetch(SB_URL+'/rest/v1/benefits_hub_benefits?id=not.is.null',{method:'DELETE',headers:{'Prefer':'return=minimal'}});
   if(!del.ok)return false;return await seedDefaultBenefits();}
+
+/* ----- Attached file (image / PDF) — Supabase Storage ----- */
+const SB_BUCKET='benefit-files';
+const SB_STORAGE=SB_URL+'/storage/v1';
+const FILE_MAX=10*1024*1024;
+const FILE_TYPES=['image/png','image/jpeg','image/jpg','image/webp','image/gif','image/svg+xml','application/pdf'];
+const isImageFile=f=>!!(f&&/^image\//.test(f.type||'')||(f&&/\.(png|jpe?g|webp|gif|svg)$/i.test(f.name||f.url||'')));
+const isPdfFile=f=>!!(f&&((f.type||'')==='application/pdf'||/\.pdf($|\?)/i.test(f.name||f.url||'')));
+/* a public storage URL + ?download=<name> makes the browser save the file instead of navigating to it */
+const fileDownloadUrl=f=>!f||!f.url?'':f.url+(f.url.includes('?')?'&':'?')+'download='+encodeURIComponent(f.name||'file');
+const fileLabel=f=>!f?'':(f.name||(isPdfFile(f)?'מסמך PDF':'קובץ מצורף'));
+const fileKind=f=>isPdfFile(f)?'מסמך PDF':isImageFile(f)?'תמונה':'קובץ';
+function slugFileName(name){
+  const ix=String(name||'').lastIndexOf('.');
+  const ext=ix>0?String(name).slice(ix).toLowerCase().replace(/[^a-z0-9.]/g,''):'';
+  const base=(ix>0?String(name).slice(0,ix):String(name||'file')).replace(/[^a-zA-Z0-9._-]+/g,'-').replace(/^-+|-+$/g,'').slice(0,48);
+  return (base||'file')+(ext||'');}
+/* uploads to the public bucket and returns {url,name,path,type} */
+async function uploadBenefitFile(file){
+  if(file.size>FILE_MAX)throw new Error('גודל הקובץ חורג מ-10MB.');
+  const type=file.type||'application/octet-stream';
+  if(!FILE_TYPES.includes(type))throw new Error('סוג קובץ לא נתמך — נא לצרף תמונה או PDF.');
+  const path='benefits/'+Date.now()+'-'+Math.random().toString(36).slice(2,8)+'-'+slugFileName(file.name);
+  const r=await authFetch(SB_STORAGE+'/object/'+SB_BUCKET+'/'+path,
+    {method:'POST',headers:{'Content-Type':type,'x-upsert':'true'},body:file});
+  if(!r.ok)throw new Error('העלאת הקובץ נכשלה — בדקו חיבור/הרשאות.');
+  return {url:SB_STORAGE+'/object/public/'+SB_BUCKET+'/'+path,name:file.name||slugFileName(file.name),path,type};}
+async function deleteBenefitFile(f){
+  if(!f||!f.path)return;
+  try{await authFetch(SB_STORAGE+'/object/'+SB_BUCKET+'/'+f.path,{method:'DELETE'});}catch(e){}}
 
 /* view impressions — counted once per benefit per browser session */
 const SS_VIEWED='hfca-viewed-benefits';
@@ -1019,8 +1103,19 @@ function bdActHtml(a){const t=bt(a.h);let ic;
   if(t==='wa')ic=svg(WA,1);else if(t==='phone')ic=svg(BI.phone,1);else if(t==='mail')ic=svg(BI.mail);else if(t==='pdf')ic=svg(BI.pdf);else ic=svg(BI.web);
   const ext=t==='web'?' target="_blank" rel="noopener"':'';
   return `<a class="bdact ${t}" href="${esc(a.h)}"${ext}><span class="bic">${ic}</span><span>${esc(a.t)}</span><span class="arr">${svg('<path d="m15 18-6-6 6-6"/>')}</span></a>`;}
+function bdFileHtml(f){
+  if(!f||!f.url)return '';
+  const ic=isImageFile(f)?BI.img:isPdfFile(f)?BI.pdf:BI.download;
+  const thumb=isImageFile(f)?`<div class="bd-thumb"><img src="${esc(f.url)}" alt="${esc(fileLabel(f))}" loading="lazy"></div>`:'';
+  return `<div class="bd-fileblock"><div class="bd-sub">${svg(BI.download)}מסמך מצורף</div>
+    <a class="bd-file" href="${esc(fileDownloadUrl(f))}" download="${esc(f.name||'')}">
+      <span class="bic">${svg(ic)}</span>
+      <span class="fmeta"><b>${esc(fileLabel(f))}</b><span>${esc(fileKind(f))} · לחצו להורדה</span></span>
+      <span class="arr">${svg('<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/>')}</span>
+    </a>${thumb}</div>`;}
 function benefitDetailHtml(b){
   const acts=(b.a||[]).map(bdActHtml).join('');
+  const fileHtml=bdFileHtml(b.f);
   return `<div class="bd-head">
       <div class="bd-ic">${svg(ICON[b.c]||ICON.professional)}</div>
       <div><div class="bd-cat">${CATS[b.c]||''}</div>${BADGE_HTML[b.badge]||''}</div>
@@ -1028,6 +1123,7 @@ function benefitDetailHtml(b){
     <h2 id="bdName">${esc(b.n)}</h2>
     <div class="bd-tag">${svg('<circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/>')}<span>${esc(b.tag)}</span></div>
     ${b.d?`<p class="bd-desc">${esc(b.d)}</p>`:''}
+    ${fileHtml}
     ${acts?`<div class="bd-sub">${svg('<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>')}דרכי מימוש ויצירת קשר</div><div class="bd-acts">${acts}</div>`:''}
     <div class="bd-foot">${svg('<path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/>')}הטבה בלעדית לחברי התאחדות יועצי המשכנתאות</div>`;}
 function openBenefit(i,fromHash){
@@ -1165,6 +1261,19 @@ document.addEventListener('focusin',e=>{
 /* ===== ADMIN (auth via Supabase) ===== */
 const adminOv=document.getElementById('adminOv'),adminLogin=document.getElementById('adminLogin'),adminPanel=document.getElementById('adminPanel');
 const admList=document.getElementById('admList'),benForm=document.getElementById('benForm');
+let admViewsMap={};
+/* file attached to the benefit currently open in the form (null = none) */
+let bfFileCurrent=null;
+const bfFileInput=document.getElementById('bfFile'),bfFileBox=document.getElementById('bfFileCur'),bfFileLink=document.getElementById('bfFileLink');
+function renderBfFile(){
+  if(bfFileCurrent&&bfFileCurrent.url){
+    bfFileLink.textContent=fileLabel(bfFileCurrent);
+    bfFileLink.href=bfFileCurrent.url;
+    bfFileBox.hidden=false;}
+  else bfFileBox.hidden=true;}
+function setBfFile(f){bfFileCurrent=f&&f.url?f:null;renderBfFile();}
+document.getElementById('bfFileRm').addEventListener('click',()=>{setBfFile(null);bfFileInput.value='';});
+
 document.getElementById('bfCat').innerHTML=Object.keys(CATS).map(c=>`<option value="${c}">${CATS[c]}</option>`).join('');
 function openAdmin(){adminOv.hidden=false;document.body.style.overflow='hidden';
   if(isLoggedIn())showPanel();
@@ -1190,19 +1299,22 @@ document.getElementById('admLogout').addEventListener('click',async()=>{await sb
 document.getElementById('admReset').addEventListener('click',async()=>{
   if(!isLoggedIn())return;
   if(!confirm('לשחזר את רשימת ההטבות המקורית? כל השינויים שבוצעו יימחקו.'))return;
-  const before=BENEFITS.length;
+  const before=BENEFITS.length,droppedFiles=BENEFITS.map(b=>b.f).filter(f=>f&&f.path);
   if(!await resetBenefitsToDefaults()){alert('שחזור נכשל — בדקו חיבור/הרשאות.');return;}
+  for(const f of droppedFiles)await deleteBenefitFile(f);
   await logChange('reset',null,{before_count:before,after_count:DEFAULT_BENEFITS.length});
   await refreshBenefitsFromServer();renderAdmList();resetBenForm();loadViewCounts();});
 
 function renderAdmList(){
   admList.innerHTML=BENEFITS.length?BENEFITS.map((b,i)=>`<div class="adm-item">
     <div class="ti"><b>${esc(b.n)}</b><span>${CATS[b.c]||''} · ${esc(b.tag)}</span></div>
+    ${b.f&&b.f.url?`<span class="file-badge" title="${esc('קובץ מצורף: '+fileLabel(b.f))}">${svg(BI.paperclip)}</span>`:''}
     <span class="views-badge" title="צפיות">${svg('<path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>')}${(admViewsMap[benefitKey(b)]||0).toLocaleString('he-IL')}</span>
     <button type="button" class="ib" data-edit="${i}" aria-label="עריכה">${svg('<path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/>')}</button>
     <button type="button" class="ib del" data-del="${i}" aria-label="מחיקה">${svg('<path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>')}</button>
   </div>`).join(''):'<p style="color:var(--muted);text-align:center;padding:20px">אין הטבות. הוסיפו הטבה חדשה בטופס.</p>';}
-function resetBenForm(){benForm.reset();document.getElementById('bfIdx').value=-1;document.getElementById('bfTitle').textContent='הוספת הטבה חדשה';}
+function resetBenForm(){benForm.reset();document.getElementById('bfIdx').value=-1;document.getElementById('bfTitle').textContent='הוספת הטבה חדשה';
+  bfFileInput.value='';setBfFile(null);}
 admList.addEventListener('click',e=>{
   const eb=e.target.closest('[data-edit]'),db=e.target.closest('[data-del]');
   if(eb){const b=BENEFITS[+eb.dataset.edit];if(!b)return;
@@ -1211,11 +1323,13 @@ admList.addEventListener('click',e=>{
     document.getElementById('bfBadge').value=b.badge||'';document.getElementById('bfTag').value=b.tag;
     document.getElementById('bfDesc').value=b.d||'';
     document.getElementById('bfActs').value=(b.a||[]).map(a=>`${a.t} | ${a.h}`).join('\n');
+    bfFileInput.value='';setBfFile(b.f);
     document.getElementById('bfTitle').textContent='עריכת: '+b.n;}
   if(db){const i=+db.dataset.del,removed=BENEFITS[i];if(!removed)return;
     if(!confirm('למחוק את ההטבה "'+removed.n+'"?'))return;
     (async()=>{
       if(!removed.id||!await deleteBenefit(removed.id)){alert('מחיקה נכשלה — בדקו חיבור/הרשאות.');return;}
+      await deleteBenefitFile(removed.f);
       await logChange('delete',removed,{removed});
       await refreshBenefitsFromServer();renderAdmList();resetBenForm();})();}});
 document.getElementById('bfCancel').addEventListener('click',resetBenForm);
@@ -1230,16 +1344,23 @@ benForm.addEventListener('submit',async e=>{e.preventDefault();
     const t=l.slice(0,ix).trim(),h=l.slice(ix+1).trim();return t&&h?{t,h}:null;}).filter(Boolean);
   const idx=+document.getElementById('bfIdx').value,before=(idx>=0?BENEFITS[idx]:null);
   const b={n,c,tag,d,a};if(badge)b.badge=badge;if(before&&before.id)b.id=before.id;
+  const prevFile=before?before.f:null,picked=bfFileInput.files&&bfFileInput.files[0];
   const btn=benForm.querySelector('button[type=submit]');btn.disabled=true;
+  let uploaded=null;
   try{
-    if(!await saveBenefit(b))throw 0;
+    if(picked){uploaded=await uploadBenefitFile(picked);b.f=uploaded;}
+    else b.f=bfFileCurrent;
+    if(!await saveBenefit(b))throw new Error('שמירה נכשלה — בדקו חיבור/הרשאות.');
+    /* the previous file is dropped only once the row points elsewhere */
+    if(prevFile&&prevFile.path&&(!b.f||b.f.path!==prevFile.path))await deleteBenefitFile(prevFile);
     await logChange(b.id?'update':'create',b,b.id?{before,after:b}:{after:b});
     await refreshBenefitsFromServer();renderAdmList();resetBenForm();
-  }catch(err){alert('שמירה נכשלה — בדקו חיבור/הרשאות.');}
+  }catch(err){
+    if(uploaded)await deleteBenefitFile(uploaded);
+    alert((err&&err.message)||'שמירה נכשלה — בדקו חיבור/הרשאות.');}
   finally{btn.disabled=false;}});
 
 /* ===== ADMIN ANALYTICS — change log + view counts ===== */
-let admViewsMap={};
 const LOG_ACT={create:'הוספה',update:'עריכה',delete:'מחיקה',reset:'שחזור ברירת מחדל'};
 function fmtDate(s){try{return new Date(s).toLocaleString('he-IL',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});}catch(e){return s||'';}}
 
